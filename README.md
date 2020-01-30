@@ -54,21 +54,24 @@ git command but should be used in conjunction with.
     does not exist, create one with the same name and set it on the local
     branch.
 
- *  `cargo git add`
+ *  `cargo git add [params]`
 
     Same as `git add` but doesn't go through Cargo.lock
 
- *  `cargo git diff`
+ *  `cargo git diff [params]`
 
     Same as `git diff` but always ignore Cargo.lock
 
- *  `cargo git commit`
+ *  `cargo git commit [params]`
 
-    Exactly the same as `git commit`
+    Commit the files added with the message WIP and add the parent branch in
+    description.
 
- *  `cargo git checkout`
+ *  `cargo git checkout [params]`
 
     Exactly the same as `git checkout` but always ignore Cargo.lock
+
+    `git checkout [params] -- (git diff --name-only | grep -v Cargo.lock)`
 
  *  `cargo git checkout --cargo [params]`
 
