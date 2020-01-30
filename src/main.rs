@@ -1,5 +1,9 @@
+mod commands;
+mod git;
+
 use std::env;
 use std::io::{self, Write};
+use std::iter::Iterator;
 
 use structopt::{StructOpt, clap::AppSettings};
 
@@ -19,6 +23,18 @@ pub enum Opts {
 #[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Params {
     args: Vec<String>,
+}
+
+impl Iterator for Params {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.args.is_empty() {
+            None
+        } else {
+            Some(self.args.remove(0))
+        }
+    }
 }
 
 fn main() {
@@ -44,7 +60,16 @@ fn execute() -> i32 {
 
     let opts = Opts::from_iter(args);
 
-    println!("{:?}", opts);
+    let res = match opts {
+        Opts::Commit(params) => commands::commit::run(params),
+        _ => todo!(),
+    };
 
-    SUCCESS
+    if let Err(err) = res {
+        eprintln!("{}", err);
+
+        FAILURE
+    } else {
+        SUCCESS
+    }
 }
