@@ -62,6 +62,7 @@ fn execute() -> i32 {
 
     let res = match opts {
         Opts::Add(params) => commands::add::run(params),
+        Opts::Checkout(params) => commands::checkout::run(params),
         Opts::Commit(params) => commands::commit::run(params),
         Opts::Diff(params) => commands::diff::run(params),
         _ => todo!(),
