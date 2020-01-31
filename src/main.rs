@@ -61,6 +61,7 @@ fn execute() -> i32 {
     let opts = Opts::from_iter(args);
 
     let res = match opts {
+        Opts::Add(params) => commands::add::run(params),
         Opts::Commit(params) => commands::commit::run(params),
         _ => todo!(),
     };
