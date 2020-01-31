@@ -5,7 +5,7 @@ use std::env;
 use std::io::{self, Write};
 use std::iter::Iterator;
 
-use structopt::{StructOpt, clap::AppSettings};
+use structopt::{clap::AppSettings, StructOpt};
 
 #[derive(StructOpt, Debug)]
 #[structopt(
@@ -14,15 +14,33 @@ use structopt::{StructOpt, clap::AppSettings};
 )]
 pub enum Opts {
     Add(Params),
+    Branch(Branch),
     Checkout(Params),
     Commit(Params),
     Diff(Params),
+    Push(Params),
+    Squash(Squash),
 }
 
 #[derive(StructOpt, Debug)]
 #[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Params {
     args: Vec<String>,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Branch {
+    branch_name: String,
+
+    /// Delete branch
+    #[structopt(short = "d")]
+    delete: bool,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Squash {
+    /// Revision to move to (fork point by default)
+    revision: Option<String>,
 }
 
 impl Iterator for Params {
@@ -62,9 +80,12 @@ fn execute() -> i32 {
 
     let res = match opts {
         Opts::Add(params) => commands::add::run(params),
+        Opts::Branch(params) => commands::branch::run(params),
         Opts::Checkout(params) => commands::checkout::run(params),
         Opts::Commit(params) => commands::commit::run(params),
         Opts::Diff(params) => commands::diff::run(params),
+        Opts::Push(params) => commands::push::run(params),
+        Opts::Squash(params) => commands::squash::run(params),
         _ => todo!(),
     };
 

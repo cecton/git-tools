@@ -15,7 +15,9 @@ git command but should be used in conjunction with.
  *  `cargo git merge <branch>`
 
     Merge branch to the current branch with a merge commit only
-    (traditional merge).
+    (traditional merge). And delete the local and remote branch afterwards.
+
+    This command will fail in case of merge conflict.
 
  *  `cargo git update`
 
