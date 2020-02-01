@@ -8,6 +8,8 @@ pub fn run(params: Params) -> Result<(), Box<dyn std::error::Error>> {
     let repo = Git::open()?;
     let mut message = "WIP\n\n".to_string();
 
+    // TODO: should probably look at passed commits too? Problem with cherry-picking
+
     if let Some(hash) = repo.get_forked_hash()? {
         message.push_str(&format!("Forked at: {}\n", hash));
     }

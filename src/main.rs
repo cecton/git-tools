@@ -2,7 +2,7 @@ mod commands;
 mod git;
 
 use std::env;
-use std::io::{self, Write};
+use std::io::Write;
 use std::iter::Iterator;
 
 use structopt::{clap::AppSettings, StructOpt};
@@ -86,7 +86,6 @@ fn execute() -> i32 {
         Opts::Diff(params) => commands::diff::run(params),
         Opts::Push(params) => commands::push::run(params),
         Opts::Squash(params) => commands::squash::run(params),
-        _ => todo!(),
     };
 
     if let Err(err) = res {

@@ -75,13 +75,12 @@ git command but should be used in conjunction with.
 
     `git checkout [params] -- (git diff --name-only | grep -v Cargo.lock)`
 
- *  `cargo git checkout --cargo [params]`
-
-    `git checkout [params] -- (git diff --name-only | grep Cargo.toml)`
-
  *  `cargo git squash [<other-commit>]`
 
-    `git reset --soft <other-commit|forking-commit>`
+    `git reset --soft <other-commit|forking-branch>`
 
     This command allows squashing the current branch by reseting to the parent
-    commit. This command should be followed ultimately by `git commit`.
+    branch. This command should be followed ultimately by `git commit`.
+
+    This command will fail if the current branch is no up-to-date with the
+    parent.

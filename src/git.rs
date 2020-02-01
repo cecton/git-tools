@@ -149,6 +149,21 @@ impl Git {
 
         Ok(())
     }
+
+    pub fn graph_ahead_behind(&self, from: &str, to: &str) -> Result<(usize, usize), Error> {
+        let from = self
+            .repo
+            .revparse_single(from)?
+            .into_commit()
+            .expect("from is not a commit");
+        let to = self
+            .repo
+            .revparse_single(to)?
+            .into_commit()
+            .expect("from is not a commit");
+
+        self.repo.graph_ahead_behind(from.id(), to.id())
+    }
 }
 
 pub fn hash_from_oid(oid: Oid) -> String {
