@@ -4,13 +4,15 @@ cargo-git
 An opinionated helper command to use git with cargo. This does not replace the
 git command but should be used in conjunction with.
 
- *  `cargo git branch <new_branch>`
+ *  `cargo git fork <new-branch> [<from-branch>]`
 
-    Create a new branch based on the current branch to switch to it
+    Create a new branch based on <from-branch> (current branch by default) and
+    switch to it. Also make an init commit to track the forking branch and
+    commit it came from.
 
- *  `cargo git branch -d <existing_branch>`
+ *  `cargo git delete <existing-branch>`
 
-    Deletes existing branch locally and remotely
+    Deletes existing branch locally and its upstream.
 
  *  `cargo git merge <branch>`
 

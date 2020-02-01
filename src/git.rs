@@ -23,7 +23,11 @@ impl Git {
             let commit = object.as_commit().unwrap();
             head_message = commit.message().unwrap().to_string();
             head_hash = hash_from_oid(object.id());
-            branch_name = maybe_ref.and_then(|x| x.shorthand().map(|x| x.to_string()));
+            branch_name = maybe_ref.and_then(|x| {
+                x.shorthand()
+                    .filter(|&x| x != "HEAD")
+                    .map(|x| x.to_string())
+            });
             upstream = if let Some(name) = branch_name.as_ref() {
                 if let Ok(remote_branch) = repo
                     .find_branch(name, BranchType::Local)
@@ -80,15 +84,23 @@ impl Git {
         Ok(files)
     }
 
-    pub fn branch(&self, name: &str) -> Result<String, Error> {
-        let object = self.repo.revparse_single("HEAD")?;
+    pub fn branch(&self, name: &str, from: Option<&str>) -> Result<String, Error> {
+        let object = self.repo.revparse_single(from.unwrap_or("HEAD"))?;
         let commit = object.as_commit().unwrap();
         let branch = self.repo.branch(name, &commit, false)?;
 
         Ok(branch.get().name().unwrap().to_string())
     }
 
-    pub fn set_head(&mut self, branch_name: &str) -> Result<(), Error> {
+    pub fn get_branch_hash(&self, branch_name: &str) -> Result<Option<String>, Error> {
+        if let (_, Some(reference)) = self.repo.revparse_ext(branch_name)? {
+            Ok(Some(hash_from_oid(reference.target().unwrap())))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn switch_branch(&mut self, branch_name: &str) -> Result<(), Error> {
         let branch = self.repo.find_branch(branch_name, BranchType::Local)?;
         let object = self.repo.revparse_single(branch_name)?;
 
@@ -107,7 +119,10 @@ impl Git {
         let object = self.repo.revparse_single(revision)?;
         let oid = object.id();
 
-        if let (_, Some(mut reference)) = self.repo.revparse_ext(self.branch_name.as_ref().unwrap_or(&self.head_hash))? {
+        if let (_, Some(mut reference)) = self
+            .repo
+            .revparse_ext(self.branch_name.as_ref().unwrap_or(&self.head_hash))?
+        {
             reference.set_target(oid, message)?;
         } else {
             self.repo.set_head_detached(oid)?;

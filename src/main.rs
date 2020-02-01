@@ -14,10 +14,11 @@ use structopt::{clap::AppSettings, StructOpt};
 )]
 pub enum Opts {
     Add(Params),
-    Branch(Branch),
     Checkout(Params),
     Commit(Params),
+    Delete(Delete),
     Diff(Params),
+    Fork(Fork),
     Push(Params),
     Squash(Squash),
 }
@@ -29,12 +30,14 @@ pub struct Params {
 }
 
 #[derive(StructOpt, Debug)]
-pub struct Branch {
+pub struct Delete {
     branch_name: String,
+}
 
-    /// Delete branch
-    #[structopt(short = "d")]
-    delete: bool,
+#[derive(StructOpt, Debug)]
+pub struct Fork {
+    branch_name: String,
+    from: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
@@ -80,10 +83,11 @@ fn execute() -> i32 {
 
     let res = match opts {
         Opts::Add(params) => commands::add::run(params),
-        Opts::Branch(params) => commands::branch::run(params),
         Opts::Checkout(params) => commands::checkout::run(params),
         Opts::Commit(params) => commands::commit::run(params),
+        Opts::Delete(params) => commands::delete::run(params),
         Opts::Diff(params) => commands::diff::run(params),
+        Opts::Fork(params) => commands::fork::run(params),
         Opts::Push(params) => commands::push::run(params),
         Opts::Squash(params) => commands::squash::run(params),
     };
