@@ -19,6 +19,7 @@ pub enum Opts {
     Delete(Delete),
     Diff(Params),
     Fork(Fork),
+    Merge(Merge),
     Push(Params),
     Squash(Squash),
 }
@@ -38,6 +39,11 @@ pub struct Delete {
 pub struct Fork {
     branch_name: String,
     from: Option<String>,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Merge {
+    branch_name: String,
 }
 
 #[derive(StructOpt, Debug)]
@@ -88,6 +94,7 @@ fn execute() -> i32 {
         Opts::Delete(params) => commands::delete::run(params),
         Opts::Diff(params) => commands::diff::run(params),
         Opts::Fork(params) => commands::fork::run(params),
+        Opts::Merge(params) => commands::merge::run(params),
         Opts::Push(params) => commands::push::run(params),
         Opts::Squash(params) => commands::squash::run(params),
     };

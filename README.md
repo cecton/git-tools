@@ -19,7 +19,8 @@ git command but should be used in conjunction with.
     Merge branch to the current branch with a merge commit only
     (traditional merge). And delete the local and remote branch afterwards.
 
-    This command will fail in case of merge conflict.
+    This command will fail if there is any conflict. (If the branch given is
+    not up-to-date enough with the current branch.
 
  *  `cargo git update`
 
@@ -84,5 +85,5 @@ git command but should be used in conjunction with.
     This command allows squashing the current branch by reseting to the parent
     branch. This command should be followed ultimately by `git commit`.
 
-    This command will fail if the current branch is no up-to-date with the
+    This command will fail if the current branch is not up-to-date with the
     parent.

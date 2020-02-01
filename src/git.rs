@@ -1,4 +1,4 @@
-use git2::{BranchType, Error, StatusOptions};
+use git2::{BranchType, Error, MergeOptions, StatusOptions};
 pub use git2::{Oid, Repository};
 use regex::Regex;
 
@@ -178,6 +178,35 @@ impl Git {
             .expect("from is not a commit");
 
         self.repo.graph_ahead_behind(from.id(), to.id())
+    }
+
+    pub fn merge_no_conflict(&mut self, branch_name: &str, message: &str) -> Result<String, Error> {
+        let our_object = self.repo.revparse_single("HEAD")?;
+        let our = our_object.as_commit().unwrap();
+        let their_object = self.repo.revparse_single(branch_name)?;
+        let their = their_object.as_commit().unwrap();
+        let a_commit = self.repo.find_annotated_commit(their_object.id())?;
+
+        let mut options = MergeOptions::new();
+        options.fail_on_conflict(true);
+        self.repo.merge(&[&a_commit], Some(&mut options), None)?;
+        let mut index = self.repo.index()?;
+        let oid = index.write_tree_to(&self.repo)?;
+        let tree = self.repo.find_tree(oid)?;
+
+        let signature = self.repo.signature()?;
+        let oid = self.repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            message,
+            &tree,
+            &[&our, &their],
+        )?;
+
+        self.head_hash = hash_from_oid(oid);
+
+        Ok(self.head_hash.clone())
     }
 }
 
