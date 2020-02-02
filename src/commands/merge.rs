@@ -16,6 +16,15 @@ pub fn run(params: Merge) -> Result<(), Box<dyn std::error::Error>> {
         branch_name,
         format!("Merge branch '{}' into {}", branch_name, current_branch).as_str(),
     )?;
+
+    if branch_name == "master" || branch_name.contains("/") {
+        return Err(format!(
+            "The branch '{}' has been merged but not deleted!",
+            branch_name
+        )
+        .into());
+    }
+
     git.full_delete_branch(branch_name)?;
 
     println!("The branch '{}' has been merged and deleted.", branch_name);
