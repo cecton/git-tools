@@ -6,7 +6,7 @@ pub fn run(params: Squash) -> Result<(), Box<dyn std::error::Error>> {
 
     let revision = if let Some(rev) = params.revision {
         rev
-    } else if let Some(parent) = git.get_parent_branch()? {
+    } else if let (_forked_at, Some(parent)) = git.get_parent()? {
         parent
     } else {
         return Err("Could not find forked point and no revision provided!".into());

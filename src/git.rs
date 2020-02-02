@@ -58,24 +58,46 @@ impl Git {
         })
     }
 
-    pub fn get_forked_hash(&self) -> Result<Option<String>, Error> {
-        let re = Regex::new(r"(?m)^\s*Forked at:\s*(\S+)").unwrap();
+    pub fn get_parent(&self) -> Result<(Option<String>, Option<String>), Error> {
+        let re_forked_at = Regex::new(r"(?m)^\s*Forked at:\s*(\S+)").unwrap();
+        let re_parent_branch = Regex::new(r"(?m)^\s*Parent branch:\s*(\S+)").unwrap();
 
-        if let Some(captures) = &re.captures(self.head_message.as_str()) {
-            Ok(Some(captures[1].to_string()))
-        } else {
-            Ok(None)
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.set_sorting(Sort::TOPOLOGICAL);
+        revwalk.push_head()?;
+
+        let mut forked_at = None;
+        let mut parent_branch = None;
+        let mut count = 0;
+        for oid in revwalk {
+            let oid = oid?;
+            let commit = self.repo.find_commit(oid)?;
+            let message = commit.message().unwrap();
+
+            if forked_at.is_none() {
+                forked_at = re_forked_at
+                    .captures(message)
+                    .as_ref()
+                    .map(|captures| captures[1].to_string());
+            }
+            if parent_branch.is_none() {
+                parent_branch = re_parent_branch
+                    .captures(message)
+                    .as_ref()
+                    .map(|captures| captures[1].to_string());
+            }
+
+            if forked_at.is_some() && parent_branch.is_some() {
+                break;
+            }
+
+            count += 1;
+            if count >= 30 {
+                break;
+            }
         }
-    }
 
-    pub fn get_parent_branch(&self) -> Result<Option<String>, Error> {
-        let re = Regex::new(r"(?m)^\s*Parent branch:\s*(\S+)").unwrap();
-
-        if let Some(captures) = &re.captures(self.head_message.as_str()) {
-            Ok(Some(captures[1].to_string()))
-        } else {
-            Ok(None)
-        }
+        Ok((forked_at, parent_branch))
     }
 
     pub fn get_unstaged_files(&self) -> Result<Vec<String>, Error> {

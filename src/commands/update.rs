@@ -9,6 +9,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
 
     let current = git.branch_name.as_ref().unwrap_or(&git.head_hash).clone();
 
+    let (forked_at, parent_branch) = git.get_parent()?;
+
     if params.deps {
         let cargo_update = Command::new("cargo").arg("update").status()?;
 
@@ -17,7 +19,7 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         git.commit_files("Update Cargo.lock", &["Cargo.lock"])?;
-    } else if let Some(parent) = git.get_parent_branch()?.as_ref() {
+    } else if let Some(parent) = parent_branch.as_ref() {
         let mut rev_list = git.rev_list("HEAD", parent, true)?;
 
         if rev_list.is_empty() {
@@ -25,7 +27,7 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
 
-        let forked_at = if let Some(hash) = git.get_forked_hash()? {
+        let forked_at = if let Some(hash) = forked_at {
             format!("Forked at: {}\n", hash)
         } else {
             String::new()
@@ -51,30 +53,33 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
 
                     return Ok(());
                 } else {
-                    let revision = last_failing_revision.unwrap();
-
                     println!(
                         "Your current branch is still behind '{}' by {} commit(s).",
                         parent, skipped
                     );
 
-                    let mut message = format!(
-                        "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
-                        current, parent, revision, parent,
-                    );
-                    message.push_str(forked_at.as_str());
+                    if params.no_merge {
+                        return Ok(());
+                    } else {
+                        let revision = last_failing_revision.unwrap();
+                        let mut message = format!(
+                            "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
+                            current, parent, revision, parent,
+                        );
+                        message.push_str(forked_at.as_str());
 
-                    return Err(Command::new("git")
-                        .args(&[
-                            "merge",
-                            "--no-ff",
-                            revision.as_str(),
-                            "-m",
-                            message.as_str(),
-                        ])
-                        .args(params.merge_args)
-                        .exec()
-                        .into());
+                        return Err(Command::new("git")
+                            .args(&[
+                                "merge",
+                                "--no-ff",
+                                revision.as_str(),
+                                "-m",
+                                message.as_str(),
+                            ])
+                            .args(params.merge_args)
+                            .exec()
+                            .into());
+                    }
                 }
             } else {
                 println!("Merge conflict detected on: {}", revision);

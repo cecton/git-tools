@@ -60,6 +60,11 @@ pub struct Update {
     #[structopt(long = "deps")]
     deps: bool,
 
+    // NOTE: the long and short name for the parameters must not conflict with `git merge`
+    /// Do not run `git merge` at the end. (Merge to the latest commit possible without conflict.)
+    #[structopt(long = "no-merge", short = "u")]
+    no_merge: bool,
+
     merge_args: Vec<String>,
 }
 

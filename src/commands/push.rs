@@ -14,6 +14,10 @@ pub fn run(params: Params) -> Result<(), Box<dyn std::error::Error>> {
             .args(params.args)
             .exec()
             .into(),
-        _ => Command::new("git").arg("push").args(params.args).exec().into(),
+        _ => Command::new("git")
+            .arg("push")
+            .args(params.args)
+            .exec()
+            .into(),
     })
 }
