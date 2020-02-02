@@ -4,6 +4,10 @@ cargo-git
 An opinionated helper command to use git with cargo. This does not replace the
 git command but should be used in conjunction with.
 
+This program is in testing, please use with care! The author will not be
+responsible if you lose any data! This program is distributed in the hope that
+it will be useful, but WITHOUT ANY WARRANTY.
+
  *  `cargo git fork <new-branch> [<from-branch>]`
 
     Create a new branch based on <from-branch> (current branch by default) and
