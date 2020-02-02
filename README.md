@@ -38,17 +38,6 @@ git command but should be used in conjunction with.
     It ignores Cargo.lock conflicts by taking the Cargo.lock of the current
     branch.
 
- *  `cargo git update --rebase`
-
-    Update the current branch by rebasing the current branch to the base
-    branch.
-
-    Classic rebase. When it ends, the branch is up-to-date, no need to run
-    cargo git update again.
-
-    It ignores Cargo.lock conflicts by taking the Cargo.lock of the current
-    branch.
-
  *  `cargo git update --deps`
 
     Runs cargo update and commit only Cargo.lock alone
