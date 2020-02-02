@@ -1,3 +1,6 @@
+use std::env::{current_dir, set_current_dir};
+use std::path::{Path, PathBuf};
+
 use git2::{BranchType, Error, MergeOptions, StatusOptions};
 pub use git2::{Oid, Repository};
 use regex::Regex;
@@ -12,6 +15,10 @@ pub struct Git {
 
 impl Git {
     pub fn open() -> Result<Git, Error> {
+        if let Some(path) = find_git_repository()? {
+            set_current_dir(path).map_err(|e| Error::from_str(&e.to_string()))?;
+        }
+
         let repo = Repository::open(".")?;
         let head_message;
         let head_hash;
@@ -133,6 +140,38 @@ impl Git {
         Ok(self.head_hash.clone())
     }
 
+    pub fn commit_files(&mut self, message: &str, files: &[&str]) -> Result<Oid, Error> {
+        let object = self.repo.revparse_single("HEAD")?;
+        let commit = object.as_commit().unwrap();
+        let old_tree = commit.tree()?;
+
+        let mut treebuilder = self.repo.treebuilder(Some(&old_tree))?;
+        for file in files {
+            let oid = self.repo.blob_path(Path::new(file))?;
+            treebuilder.insert(file, oid, 0o100644)?;
+        }
+        let tree_oid = treebuilder.write()?;
+        let tree = self.repo.find_tree(tree_oid)?;
+
+        let signature = self.repo.signature()?;
+        let oid = self.repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            message,
+            &tree,
+            &[&commit],
+        )?;
+
+        let mut index = self.repo.index()?;
+        index.update_all(files, None)?;
+        self.repo.checkout_index(Some(&mut index), None)?;
+
+        self.head_hash = hash_from_oid(oid);
+
+        Ok(oid)
+    }
+
     pub fn commit(&mut self, message: &str) -> Result<Oid, Error> {
         let signature = self.repo.signature()?;
         let object = self.repo.revparse_single("HEAD")?;
@@ -219,4 +258,19 @@ pub fn hash_from_oid(oid: Oid) -> String {
     }
 
     out
+}
+
+fn find_git_repository() -> Result<Option<PathBuf>, Error> {
+    let mut path = current_dir().map_err(|e| Error::from_str(&e.to_string()))?;
+
+    loop {
+        if path.join(".git").is_dir() {
+            return Ok(Some(path));
+        }
+        if !path.pop() {
+            break;
+        }
+    }
+
+    Ok(None)
 }

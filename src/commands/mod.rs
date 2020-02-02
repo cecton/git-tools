@@ -7,3 +7,4 @@ pub mod fork;
 pub mod merge;
 pub mod push;
 pub mod squash;
+pub mod update;

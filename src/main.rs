@@ -22,6 +22,7 @@ pub enum Opts {
     Merge(Merge),
     Push(Params),
     Squash(Squash),
+    Update(Update),
 }
 
 #[derive(StructOpt, Debug)]
@@ -50,6 +51,13 @@ pub struct Merge {
 pub struct Squash {
     /// Revision to move to (fork point by default)
     revision: Option<String>,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct Update {
+    /// Runs cargo update and commit only Cargo.lock alone
+    #[structopt(long = "deps")]
+    deps: bool,
 }
 
 impl Iterator for Params {
@@ -97,6 +105,7 @@ fn execute() -> i32 {
         Opts::Merge(params) => commands::merge::run(params),
         Opts::Push(params) => commands::push::run(params),
         Opts::Squash(params) => commands::squash::run(params),
+        Opts::Update(params) => commands::update::run(params),
     };
 
     if let Err(err) = res {
