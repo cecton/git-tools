@@ -1,7 +1,7 @@
 use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
-use git2::{BranchType, Error, MergeOptions, StatusOptions};
+use git2::{BranchType, Error, MergeOptions, StatusOptions, Sort};
 pub use git2::{Oid, Repository};
 use regex::Regex;
 
@@ -246,6 +246,27 @@ impl Git {
         self.head_hash = hash_from_oid(oid);
 
         Ok(self.head_hash.clone())
+    }
+
+    pub fn try_merge(&self, branch_name: &str) -> Result<bool, Error> {
+        let their_object = self.repo.revparse_single(branch_name)?;
+        let a_commit = self.repo.find_annotated_commit(their_object.id())?;
+
+        let (analysis, _preference) = self.repo.merge_analysis(&[&a_commit])?;
+
+        Ok(analysis.is_none())
+    }
+
+    pub fn rev_list(&self, from: &str, to: &str) -> Result<Vec<String>, Error> {
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.set_sorting(Sort::TOPOLOGICAL);
+
+        let from_object = self.repo.revparse_single(from)?;
+        let to_object = self.repo.revparse_single(to)?;
+        revwalk.hide(from_object.id())?;
+        revwalk.push(to_object.id())?;
+
+        revwalk.map(|x| x.map(|y| hash_from_oid(y))).collect::<Result<Vec<_>, Error>>()
     }
 }
 
