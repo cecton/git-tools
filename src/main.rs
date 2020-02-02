@@ -54,10 +54,13 @@ pub struct Squash {
 }
 
 #[derive(StructOpt, Debug)]
+#[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Update {
     /// Runs cargo update and commit only Cargo.lock alone
     #[structopt(long = "deps")]
     deps: bool,
+
+    merge_args: Vec<String>,
 }
 
 impl Iterator for Params {

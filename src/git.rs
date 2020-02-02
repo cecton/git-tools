@@ -1,7 +1,7 @@
 use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
-use git2::{BranchType, Error, MergeOptions, StatusOptions, Sort};
+use git2::{BranchType, Error, MergeOptions, Sort, StatusOptions};
 pub use git2::{Oid, Repository};
 use regex::Regex;
 
@@ -59,7 +59,7 @@ impl Git {
     }
 
     pub fn get_forked_hash(&self) -> Result<Option<String>, Error> {
-        let re = Regex::new(r"(?m)^\s*Forked at:\s*(\w+)").unwrap();
+        let re = Regex::new(r"(?m)^\s*Forked at:\s*(\S+)").unwrap();
 
         if let Some(captures) = &re.captures(self.head_message.as_str()) {
             Ok(Some(captures[1].to_string()))
@@ -69,7 +69,7 @@ impl Git {
     }
 
     pub fn get_parent_branch(&self) -> Result<Option<String>, Error> {
-        let re = Regex::new(r"(?m)^\s*Parent branch:\s*(\w+)").unwrap();
+        let re = Regex::new(r"(?m)^\s*Parent branch:\s*(\S+)").unwrap();
 
         if let Some(captures) = &re.captures(self.head_message.as_str()) {
             Ok(Some(captures[1].to_string()))
@@ -242,31 +242,29 @@ impl Git {
             &tree,
             &[&our, &their],
         )?;
+        self.repo.cleanup_state()?;
 
         self.head_hash = hash_from_oid(oid);
 
         Ok(self.head_hash.clone())
     }
 
-    pub fn try_merge(&self, branch_name: &str) -> Result<bool, Error> {
-        let their_object = self.repo.revparse_single(branch_name)?;
-        let a_commit = self.repo.find_annotated_commit(their_object.id())?;
-
-        let (analysis, _preference) = self.repo.merge_analysis(&[&a_commit])?;
-
-        Ok(analysis.is_none())
-    }
-
-    pub fn rev_list(&self, from: &str, to: &str) -> Result<Vec<String>, Error> {
+    pub fn rev_list(&self, from: &str, to: &str, reversed: bool) -> Result<Vec<String>, Error> {
         let mut revwalk = self.repo.revwalk()?;
-        revwalk.set_sorting(Sort::TOPOLOGICAL);
+        if reversed {
+            revwalk.set_sorting(Sort::TOPOLOGICAL | Sort::REVERSE);
+        } else {
+            revwalk.set_sorting(Sort::TOPOLOGICAL);
+        }
 
         let from_object = self.repo.revparse_single(from)?;
         let to_object = self.repo.revparse_single(to)?;
         revwalk.hide(from_object.id())?;
         revwalk.push(to_object.id())?;
 
-        revwalk.map(|x| x.map(|y| hash_from_oid(y))).collect::<Result<Vec<_>, Error>>()
+        revwalk
+            .map(|x| x.map(|y| hash_from_oid(y)))
+            .collect::<Result<Vec<_>, Error>>()
     }
 }
 
@@ -285,7 +283,7 @@ fn find_git_repository() -> Result<Option<PathBuf>, Error> {
     let mut path = current_dir().map_err(|e| Error::from_str(&e.to_string()))?;
 
     loop {
-        if path.join(".git").is_dir() {
+        if path.join(".git").exists() {
             return Ok(Some(path));
         }
         if !path.pop() {
