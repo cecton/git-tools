@@ -24,7 +24,8 @@ git command but should be used in conjunction with.
 
  *  `cargo git update`
 
-    Update the current branch by merging the base branch to the current branch.
+    Update the current branch by merging the parent branch to the current
+    branch.
 
     This command merge the missing commits from the base branch to the current
     branch and stops right before it encounters a conflict.
