@@ -5,8 +5,8 @@ use crate::git::Git;
 use crate::Params;
 
 pub fn run(params: Params) -> Result<(), Box<dyn std::error::Error>> {
-    let repo = Git::open()?;
-    let all_files = repo.get_unstaged_files()?;
+    let git = Git::open()?;
+    let all_files = git.get_unstaged_files()?;
     let files: Vec<_> = all_files
         .iter()
         .filter(|x| !x.ends_with("Cargo.lock"))
@@ -14,7 +14,7 @@ pub fn run(params: Params) -> Result<(), Box<dyn std::error::Error>> {
 
     Err(Command::new("git")
         .arg("add")
-        .args(params)
+        .args(params.args)
         .arg("--")
         .args(files)
         .exec()

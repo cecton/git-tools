@@ -63,18 +63,6 @@ pub struct Update {
     merge_args: Vec<String>,
 }
 
-impl Iterator for Params {
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.args.is_empty() {
-            None
-        } else {
-            Some(self.args.remove(0))
-        }
-    }
-}
-
 fn main() {
     let exit_status = execute();
     std::io::stdout().flush().unwrap();
