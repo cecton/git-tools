@@ -58,28 +58,7 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
                         parent, skipped
                     );
 
-                    if params.no_merge {
-                        return Ok(());
-                    } else {
-                        let revision = last_failing_revision.unwrap();
-                        let mut message = format!(
-                            "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
-                            current, parent, revision, parent,
-                        );
-                        message.push_str(forked_at.as_str());
-
-                        return Err(Command::new("git")
-                            .args(&[
-                                "merge",
-                                "--no-ff",
-                                revision.as_str(),
-                                "-m",
-                                message.as_str(),
-                            ])
-                            .args(params.merge_args)
-                            .exec()
-                            .into());
-                    }
+                    break;
                 }
             } else {
                 println!("Merge conflict detected on: {}", revision);
@@ -88,7 +67,28 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        return Err("All revisions have conflicts!".into());
+        if params.no_merge {
+            return Ok(());
+        } else {
+            let revision = last_failing_revision.expect("there must be a last_failing_revision");
+            let mut message = format!(
+                "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
+                current, parent, revision, parent,
+            );
+            message.push_str(forked_at.as_str());
+
+            return Err(Command::new("git")
+                .args(&[
+                    "merge",
+                    "--no-ff",
+                    revision.as_str(),
+                    "-m",
+                    message.as_str(),
+                ])
+                .args(params.merge_args)
+                .exec()
+                .into());
+        }
     } else {
         return Err("Could not find parent branch!".into());
     }
