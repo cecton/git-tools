@@ -133,6 +133,7 @@ impl Git {
         let branch = self.repo.find_branch(branch_name, BranchType::Local)?;
         let object = self.repo.revparse_single(branch_name)?;
 
+        self.repo.checkout_tree(&object, None)?;
         self.repo.set_head(branch.get().name().unwrap())?;
 
         self.branch_name = Some(branch_name.to_string());
