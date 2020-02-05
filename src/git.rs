@@ -1,7 +1,10 @@
 use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
-use git2::{BranchType, Error, MergeOptions, Sort, StatusOptions};
+use git2::{
+    BranchType, Cred, CredentialType, Error, FetchOptions, MergeOptions, RemoteCallbacks, Sort,
+    StatusOptions,
+};
 pub use git2::{Oid, Repository};
 use regex::Regex;
 
@@ -289,6 +292,28 @@ impl Git {
             .map(|x| x.map(|y| hash_from_oid(y)))
             .collect::<Result<Vec<_>, Error>>()
     }
+
+    pub fn update_upstream(&self, branch: &str) -> Result<(), Error> {
+        let mut parts = branch.rsplitn(2, '/');
+        let branch_name = parts.next().unwrap();
+        let maybe_remote_name = parts.next();
+
+        if let Some(remote_name) = maybe_remote_name {
+            let mut remote_callbacks = RemoteCallbacks::new();
+            remote_callbacks.credentials(credentials_callback);
+
+            let mut fetch_options = FetchOptions::new();
+            fetch_options.remote_callbacks(remote_callbacks);
+
+            self.repo.find_remote(remote_name)?.fetch(
+                &[branch_name],
+                Some(&mut fetch_options),
+                None,
+            )?;
+        }
+
+        Ok(())
+    }
 }
 
 pub fn hash_from_oid(oid: Oid) -> String {
@@ -315,4 +340,24 @@ fn find_git_repository() -> Result<Option<PathBuf>, Error> {
     }
 
     Ok(None)
+}
+
+fn credentials_callback(
+    _url: &str,
+    username_from_url: Option<&str>,
+    allowed_types: CredentialType,
+) -> Result<Cred, Error> {
+    if allowed_types.contains(CredentialType::SSH_KEY) {
+        let user = users::get_current_username().expect("could not get username");
+        let home_dir = dirs::home_dir().expect("could not get home directory");
+
+        Cred::ssh_key(
+            username_from_url.unwrap_or(user.to_str().unwrap()),
+            Some(&home_dir.join(".ssh/id_rsa.pub")),
+            &home_dir.join(".ssh/id_rsa"),
+            None,
+        )
+    } else {
+        todo!();
+    }
 }
