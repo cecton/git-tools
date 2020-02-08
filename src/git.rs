@@ -221,12 +221,13 @@ impl Git {
     pub fn full_delete_branch(&self, branch_name: &str) -> Result<(), Error> {
         let mut local_branch = self.repo.find_branch(branch_name, BranchType::Local)?;
 
-        if let Ok(mut remote_branch) = local_branch.upstream() {
+        if let Ok(remote_branch) = local_branch.upstream() {
             let (maybe_remote, name) = get_remote_and_branch(&remote_branch);
             let remote = maybe_remote.expect("remote branch");
 
             let mut remote_callbacks = RemoteCallbacks::new();
-            remote_callbacks.credentials(credentials_callback);
+            let mut handler = CredentialHandler::new();
+            remote_callbacks.credentials(move |x, y, z| handler.credentials_callback(x, y, z));
 
             let mut push_options = PushOptions::new();
             push_options.remote_callbacks(remote_callbacks);
@@ -311,7 +312,8 @@ impl Git {
 
         if let Some(remote_name) = maybe_remote_name {
             let mut remote_callbacks = RemoteCallbacks::new();
-            remote_callbacks.credentials(credentials_callback);
+            let mut handler = CredentialHandler::new();
+            remote_callbacks.credentials(move |x, y, z| handler.credentials_callback(x, y, z));
 
             let mut fetch_options = FetchOptions::new();
             fetch_options.remote_callbacks(remote_callbacks);
@@ -365,22 +367,42 @@ fn get_remote_and_branch<'a>(branch: &'a Branch) -> (Option<&'a str>, &'a str) {
     (maybe_remote_name, branch_name)
 }
 
-fn credentials_callback(
-    _url: &str,
-    username_from_url: Option<&str>,
-    allowed_types: CredentialType,
-) -> Result<Cred, Error> {
-    if allowed_types.contains(CredentialType::SSH_KEY) {
-        let user = users::get_current_username().expect("could not get username");
-        let home_dir = dirs::home_dir().expect("could not get home directory");
+struct CredentialHandler {
+    second_handler: git2_credentials::CredentialHandler,
+    first_attempt_failed: bool,
+}
 
-        Cred::ssh_key(
-            username_from_url.unwrap_or(user.to_str().unwrap()),
-            Some(&home_dir.join(".ssh/id_rsa.pub")),
-            &home_dir.join(".ssh/id_rsa"),
-            None,
-        )
-    } else {
-        todo!();
+impl CredentialHandler {
+    fn new() -> CredentialHandler {
+        let git_config = git2::Config::open_default().unwrap();
+        let second_handler = git2_credentials::CredentialHandler::new(git_config);
+
+        CredentialHandler {
+            second_handler,
+            first_attempt_failed: false,
+        }
+    }
+
+    fn credentials_callback(
+        &mut self,
+        url: &str,
+        username_from_url: Option<&str>,
+        allowed_types: CredentialType,
+    ) -> Result<Cred, Error> {
+        if !self.first_attempt_failed && allowed_types.contains(CredentialType::SSH_KEY) {
+            self.first_attempt_failed = true;
+            let user = users::get_current_username().expect("could not get username");
+            let home_dir = dirs::home_dir().expect("could not get home directory");
+
+            Cred::ssh_key(
+                username_from_url.unwrap_or(user.to_str().unwrap()),
+                Some(&home_dir.join(".ssh/id_rsa.pub")),
+                &home_dir.join(".ssh/id_rsa"),
+                None,
+            )
+        } else {
+            self.second_handler
+                .try_next_credential(url, username_from_url, allowed_types)
+        }
     }
 }
