@@ -20,6 +20,10 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
 
         git.commit_files("Update Cargo.lock", &["Cargo.lock"])?;
     } else if let Some(parent) = parent_branch.as_ref() {
+        if git.has_file_changes()? {
+            return Err("The repository has not committed changes, aborting.".into());
+        }
+
         if parent.contains('/') {
             git.update_upstream(parent)?;
         }
@@ -46,11 +50,13 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             );
             message.push_str(forked_at.as_str());
 
-            if git
-                .merge_no_conflict(revision.as_str(), message.as_str())
-                .is_ok()
+            if let Some((_, cargo_lock_conflict)) =
+                git.merge_no_conflict(revision.as_str(), message.as_str())?
             {
-                println!("Succeeded to merge: {}", revision);
+                println!("{}", revision);
+                if cargo_lock_conflict {
+                    println!("WARNING: conflict with Cargo.lock detected. Run `cargo git update --deps` to fix it.");
+                }
 
                 if skipped == 0 {
                     println!("Nothing more to merge. Your branch is up-to-date.");

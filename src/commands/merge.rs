@@ -12,10 +12,16 @@ pub fn run(params: Merge) -> Result<(), Box<dyn std::error::Error>> {
 
     let branch_name = params.branch_name.as_str();
 
-    git.merge_no_conflict(
+    if let Some((_, cargo_lock_conflict)) = git.merge_no_conflict(
         branch_name,
         format!("Merge branch '{}' into {}", branch_name, current_branch).as_str(),
-    )?;
+    )? {
+        if cargo_lock_conflict {
+            println!("WARNING: conflict with Cargo.lock detected. Run `cargo git update --deps` to fix it.");
+        }
+    } else {
+        return Err("Merge conflict detected, aborted.".into());
+    }
 
     if branch_name == "master" || branch_name.contains("/") {
         return Err(format!(

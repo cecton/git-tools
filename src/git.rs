@@ -258,17 +258,56 @@ impl Git {
         self.repo.graph_ahead_behind(from.id(), to.id())
     }
 
-    pub fn merge_no_conflict(&mut self, branch_name: &str, message: &str) -> Result<String, Error> {
+    pub fn has_file_changes(&self) -> Result<bool, Error> {
+        let tree = self.repo.head()?.peel_to_tree()?;
+
+        Ok(self
+            .repo
+            .diff_tree_to_index(Some(&tree), None, None)?
+            .stats()?
+            .files_changed()
+            > 0)
+    }
+
+    pub fn merge_no_conflict(
+        &mut self,
+        branch_name: &str,
+        message: &str,
+    ) -> Result<Option<(String, bool)>, Error> {
+        let mut cargo_lock_conflict = false;
         let our_object = self.repo.revparse_single("HEAD")?;
-        let our = our_object.as_commit().unwrap();
+        let our = our_object.as_commit().expect("our is a commit");
         let their_object = self.repo.revparse_single(branch_name)?;
-        let their = their_object.as_commit().unwrap();
-        let a_commit = self.repo.find_annotated_commit(their_object.id())?;
+        let their = their_object.as_commit().expect("their is a commit");
 
         let mut options = MergeOptions::new();
-        options.fail_on_conflict(true);
-        self.repo.merge(&[&a_commit], Some(&mut options), None)?;
-        let mut index = self.repo.index()?;
+        options.fail_on_conflict(false);
+
+        let mut index = self.repo.merge_commits(&our, &their, Some(&mut options))?;
+        let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
+        for conflict in conflicts {
+            let their = conflict.their.expect("an index entry for their exist");
+            let path = std::str::from_utf8(their.path.as_slice()).expect("valid UTF-8");
+
+            if path == "Cargo.lock" {
+                use bitvec::prelude::*;
+
+                let mut flags = BitVec::<Msb0, _>::from_element(their.flags);
+                // NOTE: Reset stage flags
+                // https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
+                flags[2..=3].set_all(false);
+                let their = git2::IndexEntry {
+                    flags: flags.as_slice()[0],
+                    ..their
+                };
+                index.remove_path(Path::new("Cargo.lock")).unwrap();
+                index.add(&their)?;
+                cargo_lock_conflict = true;
+            } else {
+                return Ok(None);
+            }
+        }
+
         let oid = index.write_tree_to(&self.repo)?;
         let tree = self.repo.find_tree(oid)?;
 
@@ -281,11 +320,14 @@ impl Git {
             &tree,
             &[&our, &their],
         )?;
-        self.repo.cleanup_state()?;
+
+        let mut checkout_builder = git2::build::CheckoutBuilder::new();
+        checkout_builder.force();
+        self.repo.checkout_head(Some(&mut checkout_builder))?;
 
         self.head_hash = hash_from_oid(oid);
 
-        Ok(self.head_hash.clone())
+        Ok(Some((self.head_hash.clone(), cargo_lock_conflict)))
     }
 
     pub fn rev_list(&self, from: &str, to: &str, reversed: bool) -> Result<Vec<String>, Error> {
