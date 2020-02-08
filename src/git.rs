@@ -2,8 +2,8 @@ use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
 use git2::{
-    BranchType, Cred, CredentialType, Error, FetchOptions, MergeOptions, RemoteCallbacks, Sort,
-    StatusOptions,
+    Branch, BranchType, Cred, CredentialType, Error, FetchOptions, MergeOptions, PushOptions,
+    RemoteCallbacks, Sort, StatusOptions,
 };
 pub use git2::{Oid, Repository};
 use regex::Regex;
@@ -222,7 +222,19 @@ impl Git {
         let mut local_branch = self.repo.find_branch(branch_name, BranchType::Local)?;
 
         if let Ok(mut remote_branch) = local_branch.upstream() {
-            remote_branch.delete()?;
+            let (maybe_remote, name) = get_remote_and_branch(&remote_branch);
+            let remote = maybe_remote.expect("remote branch");
+
+            let mut remote_callbacks = RemoteCallbacks::new();
+            remote_callbacks.credentials(credentials_callback);
+
+            let mut push_options = PushOptions::new();
+            push_options.remote_callbacks(remote_callbacks);
+
+            self.repo.find_remote(remote)?.push(
+                &[&format!("+:refs/heads/{}", name)],
+                Some(&mut push_options),
+            )?;
         }
 
         local_branch.delete()?;
@@ -293,10 +305,9 @@ impl Git {
             .collect::<Result<Vec<_>, Error>>()
     }
 
-    pub fn update_upstream(&self, branch: &str) -> Result<(), Error> {
-        let mut parts = branch.rsplitn(2, '/');
-        let branch_name = parts.next().unwrap();
-        let maybe_remote_name = parts.next();
+    pub fn update_upstream(&self, branch_name: &str) -> Result<(), Error> {
+        let branch = self.repo.find_branch(branch_name, BranchType::Remote)?;
+        let (maybe_remote_name, branch_name) = get_remote_and_branch(&branch);
 
         if let Some(remote_name) = maybe_remote_name {
             let mut remote_callbacks = RemoteCallbacks::new();
@@ -340,6 +351,18 @@ fn find_git_repository() -> Result<Option<PathBuf>, Error> {
     }
 
     Ok(None)
+}
+
+fn get_remote_and_branch<'a>(branch: &'a Branch) -> (Option<&'a str>, &'a str) {
+    let mut parts = branch
+        .get()
+        .shorthand()
+        .expect("valid UTF-8")
+        .rsplitn(2, '/');
+    let branch_name = parts.next().unwrap();
+    let maybe_remote_name = parts.next();
+
+    (maybe_remote_name, branch_name)
 }
 
 fn credentials_callback(

@@ -20,7 +20,9 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
 
         git.commit_files("Update Cargo.lock", &["Cargo.lock"])?;
     } else if let Some(parent) = parent_branch.as_ref() {
-        git.update_upstream(parent)?;
+        if parent.contains('/') {
+            git.update_upstream(parent)?;
+        }
 
         let mut rev_list = git.rev_list("HEAD", parent, true)?;
 
