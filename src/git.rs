@@ -103,7 +103,7 @@ impl Git {
         Ok((forked_at, parent_branch))
     }
 
-    pub fn get_unstaged_files(&self) -> Result<Vec<String>, Error> {
+    pub fn get_staged_and_unstaged_files(&self) -> Result<Vec<String>, Error> {
         let mut files = Vec::new();
         let mut options = StatusOptions::new();
         options.include_untracked(true);
