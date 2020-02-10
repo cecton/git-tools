@@ -7,8 +7,6 @@ use crate::Update;
 pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
     let mut git = Git::open()?;
 
-    let current = git.branch_name.as_ref().unwrap_or(&git.head_hash).clone();
-
     let (forked_at, parent_branch) = git.get_parent()?;
 
     if params.deps {
@@ -45,8 +43,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         let mut last_failing_revision: Option<String> = None;
         while let Some(revision) = rev_list.pop() {
             let mut message = format!(
-                "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
-                current, parent, revision, parent,
+                "Update from parent '{}' (no conflict)\n\nCommit: {}\nParent branch: {}\n",
+                parent, revision, parent,
             );
             message.push_str(forked_at.as_str());
 
@@ -82,8 +80,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         } else {
             let revision = last_failing_revision.expect("there must be a last_failing_revision");
             let mut message = format!(
-                "Update branch '{}' from parent '{}'\n\nCommit: {}\nParent branch: {}\n",
-                current, parent, revision, parent,
+                "Update from parent '{}' (conflicts)\n\nCommit: {}\nParent branch: {}\n",
+                parent, revision, parent,
             );
             message.push_str(forked_at.as_str());
 
