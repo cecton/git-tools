@@ -9,6 +9,10 @@ pub fn run(params: Fork) -> Result<(), Box<dyn std::error::Error>> {
     let mut message = "Initial commit\n\n".to_string();
 
     if let Some(name) = params.from.as_ref() {
+        if name.contains('/') {
+            git.update_upstream(name)?;
+        }
+
         match git.get_branch_hash(name.as_str())? {
             // name is really a branch
             Some(hash) => {

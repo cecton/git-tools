@@ -344,7 +344,7 @@ impl Git {
         revwalk.push(to_object.id())?;
 
         revwalk
-            .map(|x| x.map(|y| hash_from_oid(y)))
+            .map(|x| x.map(hash_from_oid))
             .collect::<Result<Vec<_>, Error>>()
     }
 
@@ -352,6 +352,8 @@ impl Git {
         let branch = self.repo.find_branch(branch_name, BranchType::Remote)?;
         let (maybe_remote_name, branch_name) = get_remote_and_branch(&branch);
 
+        // TODO: this method fails if branch_name is not a remote branch
+        //       this `if` statement makes no sense
         if let Some(remote_name) = maybe_remote_name {
             let mut remote_callbacks = RemoteCallbacks::new();
             let mut handler = CredentialHandler::new();
