@@ -263,7 +263,7 @@ impl Git {
 
         Ok(self
             .repo
-            .diff_tree_to_index(Some(&tree), None, None)?
+            .diff_tree_to_workdir_with_index(Some(&tree), None)?
             .stats()?
             .files_changed()
             > 0)

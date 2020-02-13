@@ -4,6 +4,10 @@ use crate::Fork;
 pub fn run(params: Fork) -> Result<(), Box<dyn std::error::Error>> {
     let mut git = Git::open()?;
 
+    if git.has_file_changes()? {
+        return Err("The repository has not committed changes, aborting.".into());
+    }
+
     let branch_name = params.branch_name.as_str();
     let name = params.from.as_str();
 
