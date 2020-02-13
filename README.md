@@ -10,7 +10,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 
  *  `cargo git fork <new-branch> [<from-branch>]`
 
-    Create a new branch based on <from-branch> (current branch by default) and
+    Create a new branch based on <from-branch> (origin/master by default) and
     switch to it. Also make an init commit to track the forking branch and
     commit it came from.
 
