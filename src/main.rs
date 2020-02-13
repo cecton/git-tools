@@ -39,7 +39,8 @@ pub struct Delete {
 #[derive(StructOpt, Debug)]
 pub struct Fork {
     branch_name: String,
-    from: Option<String>,
+    #[structopt(default_value = "origin/master")]
+    from: String,
 }
 
 #[derive(StructOpt, Debug)]
