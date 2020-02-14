@@ -2,10 +2,9 @@ use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Branch, BranchType, Error, FetchOptions, MergeOptions, PushOptions,
+    Branch, BranchType, Cred, CredentialType, Error, FetchOptions, MergeOptions, PushOptions,
     RemoteCallbacks, Sort, StatusOptions,
 };
-use git2_credentials::CredentialHandler;
 pub use git2::{Oid, Repository};
 use regex::Regex;
 
@@ -227,9 +226,8 @@ impl Git {
             let remote = maybe_remote.expect("remote branch");
 
             let mut remote_callbacks = RemoteCallbacks::new();
-            let git_config = git2::Config::open_default().unwrap();
-            let mut handler = CredentialHandler::new(git_config);
-            remote_callbacks.credentials(move |x, y, z| handler.try_next_credential(x, y, z));
+            let mut handler = CredentialHandler::new();
+            remote_callbacks.credentials(move |x, y, z| handler.credentials_callback(x, y, z));
 
             let mut push_options = PushOptions::new();
             push_options.remote_callbacks(remote_callbacks);
@@ -358,9 +356,8 @@ impl Git {
         //       this `if` statement makes no sense
         if let Some(remote_name) = maybe_remote_name {
             let mut remote_callbacks = RemoteCallbacks::new();
-            let git_config = git2::Config::open_default().unwrap();
-            let mut handler = CredentialHandler::new(git_config);
-            remote_callbacks.credentials(move |x, y, z| handler.try_next_credential(x, y, z));
+            let mut handler = CredentialHandler::new();
+            remote_callbacks.credentials(move |x, y, z| handler.credentials_callback(x, y, z));
 
             let mut fetch_options = FetchOptions::new();
             fetch_options.remote_callbacks(remote_callbacks);
@@ -412,4 +409,44 @@ fn get_remote_and_branch<'a>(branch: &'a Branch) -> (Option<&'a str>, &'a str) {
     let maybe_remote_name = parts.next();
 
     (maybe_remote_name, branch_name)
+}
+
+struct CredentialHandler {
+    second_handler: git2_credentials::CredentialHandler,
+    first_attempt_failed: bool,
+}
+
+impl CredentialHandler {
+    fn new() -> CredentialHandler {
+        let git_config = git2::Config::open_default().unwrap();
+        let second_handler = git2_credentials::CredentialHandler::new(git_config);
+
+        CredentialHandler {
+            second_handler,
+            first_attempt_failed: false,
+        }
+    }
+
+    fn credentials_callback(
+        &mut self,
+        url: &str,
+        username_from_url: Option<&str>,
+        allowed_types: CredentialType,
+    ) -> Result<Cred, Error> {
+        if !self.first_attempt_failed && allowed_types.contains(CredentialType::SSH_KEY) {
+            self.first_attempt_failed = true;
+            let user = users::get_current_username().expect("could not get username");
+            let home_dir = dirs::home_dir().expect("could not get home directory");
+
+            Cred::ssh_key(
+                username_from_url.unwrap_or(user.to_str().unwrap()),
+                Some(&home_dir.join(".ssh/id_rsa.pub")),
+                &home_dir.join(".ssh/id_rsa"),
+                None,
+            )
+        } else {
+            self.second_handler
+                .try_next_credential(url, username_from_url, allowed_types)
+        }
+    }
 }
