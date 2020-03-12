@@ -81,3 +81,10 @@ it will be useful, but WITHOUT ANY WARRANTY.
 
     This command will fail if the current branch is not up-to-date with the
     parent.
+
+*  `cargo git check [<revision>]`
+
+    Check that HEAD can be merged without conflict
+
+    If the `revision` argument is not provided, the parent branch is used. If
+    the parent branch is missing, origin/master is used.

@@ -269,6 +269,32 @@ impl Git {
             > 0)
     }
 
+    pub fn check_no_conflict(&mut self, branch_name: &str) -> Result<Option<bool>, Error> {
+        let mut cargo_lock_conflict = false;
+        let our_object = self.repo.revparse_single("HEAD")?;
+        let our = our_object.as_commit().expect("our is a commit");
+        let their_object = self.repo.revparse_single(branch_name)?;
+        let their = their_object.as_commit().expect("their is a commit");
+
+        let mut options = MergeOptions::new();
+        options.fail_on_conflict(false);
+
+        let index = self.repo.merge_commits(&our, &their, Some(&options))?;
+        let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
+        for conflict in conflicts {
+            let their = conflict.their.expect("an index entry for their exist");
+            let path = std::str::from_utf8(their.path.as_slice()).expect("valid UTF-8");
+
+            if path == "Cargo.lock" {
+                cargo_lock_conflict = true;
+            } else {
+                return Ok(None);
+            }
+        }
+
+        Ok(Some(cargo_lock_conflict))
+    }
+
     pub fn merge_no_conflict(
         &mut self,
         branch_name: &str,

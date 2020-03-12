@@ -1,4 +1,5 @@
 pub mod add;
+pub mod check;
 pub mod checkout;
 pub mod commit;
 pub mod delete;
