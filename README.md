@@ -8,6 +8,115 @@ This program is in testing, please use with care! The author will not be
 responsible if you lose any data! This program is distributed in the hope that
 it will be useful, but WITHOUT ANY WARRANTY.
 
+Usage
+-----
+
+1.  Starting a new branch.
+
+    Usually you want to fetch first and then create a branch based on master.
+    To do this with Git you will do:
+
+    ```
+    git checkout master
+    git pull --ff-only
+    git checkout -b new-branch
+    ```
+
+    With cargo-git, from any branch you can directly do:
+
+    ```
+    # alias cg="cargo git"
+    cg fork new-branch
+    ```
+
+    This command will:
+     -  make sure there is no uncommitted changes (clean state)
+     -  fetch (update) master from the remote
+     -  create a new branch "new-branch" that will be based on origin/master
+
+    Note: the local branch master will not be updated. In fact, you don't even
+    need a local branch master. The exact equivalent with Git would be more
+    something like this:
+
+    ```
+    git fetch
+    # <ensure manually no uncommitted changes are pending>
+    git branch -f new-branch origin/master
+    git checkout new-branch
+    ```
+
+2.  Pushing the branch
+
+    Usually you want to push with the same name remotely than locally. To do
+    this with Git you will do:
+
+    ```
+    git push
+    # if it fails:
+    git push --set-upstream origin new-branch
+    ```
+
+    With cargo-git, only one command is necessary because it will automatically
+    set the upstream if it wasn't set:
+
+    ```
+    # alias cg="cargo git"
+    cg push
+    ```
+
+3.  Updating the branch
+
+    Usually you want to update your local branch with origin/master. To do this
+    with Git you will do:
+
+    ```
+    git fetch
+    git merge origin/master
+    # then you will solve all the conflicts of all the commits in one commit,
+    # no matter how many commits are conflicting
+    ```
+
+    With cargo-git, you would do:
+
+    ```
+    # alias cg="cargo git"
+    cg update
+    # either there is no conflict and you're done
+    #
+    # or: all the non-conflicting commits will be merged in a single merge
+    # commit until the first conflicting commit is reached THEN the first
+    # conflicting commit will be merged alone, leaving you in a merge state
+    #
+    # this will allow you to solve the first conflict separetaly in its own
+    # merge commit
+    #
+    # repeat the command `cg update` until there is nothing more to merge
+    ```
+
+    Note: all the conflicting commits will be merged one-by-one which will
+    allow you to fully understand the reason of the conflict and solve them
+    separately. (A bit like `git rebase` would do.)
+
+4.  Deleting a branch
+
+    Usually you want to delete the branch locally and remotely when you're
+    done. In Git you would do:
+
+    ```
+    git branch -d new-branch
+    git push origin :new-branch
+    ```
+
+    With cargo-git you can do not at once:
+
+    ```
+    # alias cg="cargo git"
+    cg delete new-branch
+    ```
+
+List of the Available Commands
+------------------------------
+
  *  `cargo git fork <new-branch> [<from-branch>]`
 
     Create a new branch based on <from-branch> (origin/master by default) and
