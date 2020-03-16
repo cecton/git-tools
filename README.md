@@ -107,7 +107,7 @@ Usage
     git push origin :new-branch
     ```
 
-    With cargo-git you can do not at once:
+    With cargo-git you can do both at once:
 
     ```
     # alias cg="cargo git"
