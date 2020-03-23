@@ -51,25 +51,16 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             if let Some((_, cargo_lock_conflict)) =
                 git.merge_no_conflict(revision.as_str(), message.as_str())?
             {
-                println!("{}", revision);
+                println!(
+                    "All the commits to {} have been merged successfully without conflict",
+                    revision
+                );
                 if cargo_lock_conflict {
                     println!("WARNING: conflict with Cargo.lock detected. Run `cargo git update --deps` to fix it.");
                 }
 
-                if skipped == 0 {
-                    println!("Nothing more to merge. Your branch is up-to-date.");
-
-                    return Ok(());
-                } else {
-                    println!(
-                        "Your current branch is still behind '{}' by {} commit(s).",
-                        parent, skipped
-                    );
-
-                    break;
-                }
+                break;
             } else {
-                println!("Merge conflict detected on: {}", revision);
                 skipped += 1;
                 last_failing_revision = Some(revision.clone());
             }
@@ -77,8 +68,13 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
 
         if params.no_merge {
             return Ok(());
-        } else {
-            let revision = last_failing_revision.expect("there must be a last_failing_revision");
+        } else if let Some(revision) = last_failing_revision {
+            println!(
+                "Your current branch is still behind '{}' by {} commit(s).",
+                parent, skipped
+            );
+            println!("First merge conflict detected on: {}", revision);
+
             let mut message = format!(
                 "Update from parent '{}' (conflicts)\n\nCommit: {}\nParent branch: {}\n",
                 parent, revision, parent,
@@ -96,6 +92,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
                 .args(params.merge_args)
                 .exec()
                 .into());
+        } else {
+            println!("Nothing more to merge. Your branch is up-to-date.");
         }
     } else {
         return Err("Could not find parent branch!".into());
