@@ -42,10 +42,10 @@ pub fn run(params: Check) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if let Some(revision) = last_failing_revision {
-        println!("Conflict detected on {}", revision);
+        Err(format!("Conflict detected on {}", revision).into())
     } else {
         println!("No conflict detected.");
-    }
 
-    Ok(())
+        Ok(())
+    }
 }
