@@ -43,8 +43,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         let mut last_failing_revision: Option<String> = None;
         while let Some(revision) = rev_list.pop() {
             let mut message = format!(
-                "Update from parent '{}' (no conflict)\n\nCommit: {}\nParent branch: {}\n",
-                parent, revision, parent,
+                "Merge commit {} (no conflict)\n\nParent branch: {}\n",
+                revision, parent,
             );
             message.push_str(forked_at.as_str());
 
@@ -76,8 +76,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             println!("First merge conflict detected on: {}", revision);
 
             let mut message = format!(
-                "Update from parent '{}' (conflicts)\n\nCommit: {}\nParent branch: {}\n",
-                parent, revision, parent,
+                "Merge commit {} (conflicts)\n\nParent branch: {}\n",
+                revision, parent,
             );
             message.push_str(forked_at.as_str());
 
