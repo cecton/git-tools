@@ -2,11 +2,11 @@ use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 use crate::git::Git;
-use crate::Params;
+use crate::Commit;
 
-pub fn run(params: Params) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run(params: Commit) -> Result<(), Box<dyn std::error::Error>> {
     let git = Git::open()?;
-    let mut message = "WIP\n\n".to_string();
+    let mut message = format!("{}\n\n", params.message.trim());
 
     let (forked_at, parent_branch) = git.get_parent()?;
 

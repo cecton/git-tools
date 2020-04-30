@@ -26,7 +26,7 @@ pub enum Opts {
     Checkout(Params),
     /// Commit the files staged with the message WIP and add the parent branch to the commit
     /// message
-    Commit(Params),
+    Commit(Commit),
     /// Delete an existing branch locally and remotely (its upstream)
     Delete(Delete),
     /// Same as `git diff` but ignores Cargo.lock
@@ -78,6 +78,14 @@ pub struct Check {
 }
 
 #[derive(StructOpt, Debug)]
+pub struct Commit {
+    #[structopt(long, short = "m", default_value = "WIP")]
+    message: String,
+
+    args: Vec<String>,
+}
+
+#[derive(StructOpt, Debug)]
 pub struct Delete {
     branch_name: String,
 }
@@ -104,12 +112,12 @@ pub struct Squash {
 #[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Update {
     /// Runs cargo update and commit only Cargo.lock alone
-    #[structopt(long = "deps")]
+    #[structopt(long)]
     deps: bool,
 
     // NOTE: the long and short name for the parameters must not conflict with `git merge`
     /// Do not run `git merge` at the end. (Merge to the latest commit possible without conflict.)
-    #[structopt(long = "no-merge", short = "u")]
+    #[structopt(long, short = "u")]
     no_merge: bool,
 
     merge_args: Vec<String>,
