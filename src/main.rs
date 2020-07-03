@@ -120,6 +120,10 @@ pub struct Update {
     #[structopt(long, short = "u")]
     no_merge: bool,
 
+    /// Use a specific revision instead of parent branch to update.
+    #[structopt(long, short = "r")]
+    revision: Option<String>,
+
     merge_args: Vec<String>,
 }
 

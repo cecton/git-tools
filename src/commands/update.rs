@@ -22,11 +22,12 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             return Err("The repository has not committed changes, aborting.".into());
         }
 
-        if parent.contains('/') {
+        if parent.contains('/') && params.revision.is_none() {
             git.update_upstream(parent)?;
         }
 
-        let mut rev_list = git.rev_list("HEAD", parent, true)?;
+        let mut rev_list =
+            git.rev_list("HEAD", params.revision.as_ref().unwrap_or(parent), true)?;
 
         if rev_list.is_empty() {
             println!("Your branch is already up-to-date.");
