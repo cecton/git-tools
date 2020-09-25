@@ -2,8 +2,8 @@ use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Branch, BranchType, Cred, CredentialType, Error, FetchOptions, MergeOptions, PushOptions,
-    RemoteCallbacks, Sort, StatusOptions,
+    Branch, BranchType, Cred, CredentialType, Error, ErrorCode, FetchOptions, MergeOptions,
+    PushOptions, RemoteCallbacks, Sort, StatusOptions,
 };
 pub use git2::{Oid, Repository};
 use regex::Regex;
@@ -130,6 +130,26 @@ impl Git {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn get_default_branch(&self, remote: &str) -> Result<String, Error> {
+        let reference = match self
+            .repo
+            .find_reference(format!("refs/remotes/{}/HEAD", remote).as_str())
+        {
+            Ok(x) => x,
+            Err(err) if err.code() == ErrorCode::NotFound => {
+                return Ok(format!("{}/master", remote))
+            }
+            Err(err) => return Err(err),
+        };
+
+        Ok(reference
+            .symbolic_target()
+            .expect("reference HEAD is not symbolic")
+            .strip_prefix("refs/remotes/")
+            .expect("invalid target")
+            .to_string())
     }
 
     pub fn switch_branch(&mut self, branch_name: &str) -> Result<(), Error> {

@@ -4,6 +4,7 @@ use crate::Merge;
 pub fn run(params: Merge) -> Result<(), Box<dyn std::error::Error>> {
     let mut git = Git::open()?;
 
+    let default_branch = git.get_default_branch("origin")?;
     let current_branch = if let Some(name) = git.branch_name.as_ref() {
         name.clone()
     } else {
@@ -23,7 +24,7 @@ pub fn run(params: Merge) -> Result<(), Box<dyn std::error::Error>> {
         return Err("Merge conflict detected, aborted.".into());
     }
 
-    if branch_name == "master" || branch_name.contains("/") {
+    if branch_name == default_branch || branch_name.contains("/") {
         return Err(format!(
             "The branch '{}' has been merged but not deleted!",
             branch_name

@@ -18,7 +18,7 @@ pub enum Opts {
     /// Check that HEAD can be merged without conflict
     ///
     /// If the `revision` argument is not provided, the parent branch is used. If the parent branch
-    /// is missing, origin/master is used.
+    /// is missing, the default branch is used (usually origin/main).
     Check(Check),
     /// Same as `git checkout` but ignores Cargo.lock
     ///
@@ -31,8 +31,9 @@ pub enum Opts {
     Delete(Delete),
     /// Same as `git diff` but ignores Cargo.lock
     Diff(Params),
-    /// Create a new branch (based on origin/master by default) and switch to it. Also make an init
-    /// commit to track the forking branch (parent branch) and commit it came from.
+    /// Create a new branch (based on the default branch (usually origin/main)) and switch to it.
+    /// Also make an init commit to track the forking branch (parent branch) and commit it came
+    /// from.
     Fork(Fork),
     /// Merge branch to the current branch with a merge commit only (traditional merge) and delete
     /// the local and remote branch afterwards
@@ -73,7 +74,7 @@ pub struct Params {
 
 #[derive(StructOpt, Debug)]
 pub struct Check {
-    /// Revision to check conflict with (parent branch by default or origin/master)
+    /// Revision to check conflict with (parent branch by default or default branch (origin/main)).
     revision: Option<String>,
 }
 
@@ -93,8 +94,7 @@ pub struct Delete {
 #[derive(StructOpt, Debug)]
 pub struct Fork {
     branch_name: String,
-    #[structopt(default_value = "origin/master")]
-    from: String,
+    from: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
@@ -104,14 +104,14 @@ pub struct Merge {
 
 #[derive(StructOpt, Debug)]
 pub struct Squash {
-    /// Revision to move to (fork point by default)
+    /// Revision to move to (fork point by default).
     revision: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
 #[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Update {
-    /// Runs cargo update and commit only Cargo.lock alone
+    /// Runs cargo update and commit only Cargo.lock alone.
     #[structopt(long)]
     deps: bool,
 

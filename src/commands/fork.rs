@@ -9,7 +9,11 @@ pub fn run(params: Fork) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let branch_name = params.branch_name.as_str();
-    let name = params.from.as_str();
+    let default_branch = git.get_default_branch("origin")?;
+    let name = params
+        .from
+        .as_deref()
+        .unwrap_or_else(|| default_branch.as_str());
 
     let mut message = "Initial commit\n\n".to_string();
 
@@ -28,7 +32,7 @@ pub fn run(params: Fork) -> Result<(), Box<dyn std::error::Error>> {
         // name was not a branch
         None => {
             message.push_str(&format!("Forked at: {}\n", name));
-            message.push_str(&format!("No parent branch.\n"));
+            message.push_str("No parent branch.\n");
 
             git.branch(branch_name, Some(name))?;
         }

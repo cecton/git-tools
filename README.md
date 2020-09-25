@@ -13,11 +13,11 @@ Usage
 
 1.  Starting a new branch.
 
-    Usually you want to fetch first and then create a branch based on master.
+    Usually you want to fetch first and then create a branch based on main.
     To do this with Git you will do:
 
     ```
-    git checkout master
+    git checkout main
     git pull --ff-only
     git checkout -b new-branch
     ```
@@ -31,17 +31,17 @@ Usage
 
     This command will:
      -  make sure there is no uncommitted changes (clean state)
-     -  fetch (update) master from the remote
-     -  create a new branch "new-branch" that will be based on origin/master
+     -  fetch (update) main from the remote
+     -  create a new branch "new-branch" that will be based on origin/main
 
-    Note: the local branch master will not be updated. In fact, you don't even
-    need a local branch master. The exact equivalent with Git would be more
+    Note: the local branch main will not be updated. In fact, you don't even
+    need a local branch main. The exact equivalent with Git would be more
     something like this:
 
     ```
     git fetch
     # <ensure manually no uncommitted changes are pending>
-    git branch -f new-branch origin/master
+    git branch -f new-branch origin/main
     git checkout new-branch
     ```
 
@@ -66,12 +66,12 @@ Usage
 
 3.  Updating the branch
 
-    Usually you want to update your local branch with origin/master. To do this
+    Usually you want to update your local branch with origin/main. To do this
     with Git you will do:
 
     ```
     git fetch
-    git merge origin/master
+    git merge origin/main
     # then you will solve all the conflicts of all the commits in one commit,
     # no matter how many commits are conflicting
     ```
@@ -119,7 +119,7 @@ List of the Available Commands
 
  *  `cargo git fork <new-branch> [<from-branch>]`
 
-    Create a new branch based on <from-branch> (origin/master by default) and
+    Create a new branch based on <from-branch> (origin/main by default) and
     switch to it. Also make an init commit to track the forking branch and
     commit it came from.
 
@@ -196,4 +196,4 @@ List of the Available Commands
     Check that HEAD can be merged without conflict
 
     If the `revision` argument is not provided, the parent branch is used. If
-    the parent branch is missing, origin/master is used.
+    the parent branch is missing, origin/main is used.

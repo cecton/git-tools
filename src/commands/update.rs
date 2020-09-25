@@ -8,6 +8,7 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
     let mut git = Git::open()?;
 
     let (forked_at, parent_branch) = git.get_parent()?;
+    let top_commit = params.revision.clone().or_else(|| parent_branch.clone());
 
     if params.deps {
         let cargo_update = Command::new("cargo").arg("update").status()?;
@@ -17,17 +18,22 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         git.commit_files("Update Cargo.lock", &["Cargo.lock"])?;
-    } else if let Some(parent) = parent_branch.as_ref() {
+    } else if let Some(top_commit) = top_commit {
         if git.has_file_changes()? {
             return Err("The repository has not committed changes, aborting.".into());
         }
 
-        if parent.contains('/') && params.revision.is_none() {
-            git.update_upstream(parent)?;
-        }
+        let parent_branch = if let Some(parent) = parent_branch.as_ref() {
+            if parent.contains('/') && params.revision.is_none() {
+                git.update_upstream(parent)?;
+            }
 
-        let mut rev_list =
-            git.rev_list("HEAD", params.revision.as_ref().unwrap_or(parent), true)?;
+            format!("Parent branch: {}\n", parent)
+        } else {
+            String::new()
+        };
+
+        let mut rev_list = git.rev_list("HEAD", top_commit.as_str(), true)?;
 
         if rev_list.is_empty() {
             println!("Your branch is already up-to-date.");
@@ -43,10 +49,8 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         let mut skipped = 0;
         let mut last_failing_revision: Option<String> = None;
         while let Some(revision) = rev_list.pop() {
-            let mut message = format!(
-                "Merge commit {} (no conflict)\n\nParent branch: {}\n",
-                revision, parent,
-            );
+            let mut message = format!("Merge commit {} (no conflict)\n\n", revision,);
+            message.push_str(parent_branch.as_str());
             message.push_str(forked_at.as_str());
 
             if let Some((_, cargo_lock_conflict)) =
@@ -72,14 +76,12 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
         } else if let Some(revision) = last_failing_revision {
             println!(
                 "Your current branch is still behind '{}' by {} commit(s).",
-                parent, skipped
+                top_commit, skipped
             );
             println!("First merge conflict detected on: {}", revision);
 
-            let mut message = format!(
-                "Merge commit {} (conflicts)\n\nParent branch: {}\n",
-                revision, parent,
-            );
+            let mut message = format!("Merge commit {} (conflicts)\n\n", revision,);
+            message.push_str(parent_branch.as_str());
             message.push_str(forked_at.as_str());
 
             return Err(Command::new("git")
@@ -97,7 +99,7 @@ pub fn run(params: Update) -> Result<(), Box<dyn std::error::Error>> {
             println!("Nothing more to merge. Your branch is up-to-date.");
         }
     } else {
-        return Err("Could not find parent branch!".into());
+        return Err("Could not find parent branch and no revision specified!".into());
     }
 
     Ok(())
