@@ -24,9 +24,6 @@ pub enum Opts {
     ///
     /// This is the equivalent of `git checkout [params] -- $(git diff --name-only | grep -v Cargo.lock)`
     Checkout(Params),
-    /// Commit the files staged with the message WIP and add the parent branch to the commit
-    /// message
-    Commit(Commit),
     /// Delete an existing branch locally and remotely (its upstream)
     Delete(Delete),
     /// Same as `git diff` but ignores Cargo.lock
@@ -44,11 +41,6 @@ pub enum Opts {
     /// Try to push the current branch to its remote branch. If the remote branch does not exist,
     /// create one with the same name and set it on the local branch.
     Push(Params),
-    /// This command allows squashing the current branch by reseting to the parent branch. This
-    /// command should be followed ultimately by git commit.
-    ///
-    /// This command will fail if the current branch is not up-to-date with the parent.
-    Squash(Squash),
     /// Update the current branch by merging the parent branch to the current branch.
     ///
     /// This command merges the missing commits from the base branch to the current branch and
@@ -79,14 +71,6 @@ pub struct Check {
 }
 
 #[derive(StructOpt, Debug)]
-pub struct Commit {
-    #[structopt(long, short = "m", default_value = "WIP")]
-    message: String,
-
-    args: Vec<String>,
-}
-
-#[derive(StructOpt, Debug)]
 pub struct Delete {
     branch_name: String,
 }
@@ -103,12 +87,6 @@ pub struct Merge {
 }
 
 #[derive(StructOpt, Debug)]
-pub struct Squash {
-    /// Revision to move to (fork point by default).
-    revision: Option<String>,
-}
-
-#[derive(StructOpt, Debug)]
 #[structopt(settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen])]
 pub struct Update {
     /// Runs cargo update and commit only Cargo.lock alone.
@@ -120,8 +98,7 @@ pub struct Update {
     #[structopt(long, short = "u")]
     no_merge: bool,
 
-    /// Use a specific revision instead of parent branch to update.
-    #[structopt(long, short = "r")]
+    /// Revision for the update (default branch or origin/main by default).
     revision: Option<String>,
 
     merge_args: Vec<String>,
@@ -154,13 +131,11 @@ fn execute() -> i32 {
         Opts::Add(params) => commands::add::run(params),
         Opts::Check(params) => commands::check::run(params),
         Opts::Checkout(params) => commands::checkout::run(params),
-        Opts::Commit(params) => commands::commit::run(params),
         Opts::Delete(params) => commands::delete::run(params),
         Opts::Diff(params) => commands::diff::run(params),
         Opts::Fork(params) => commands::fork::run(params),
         Opts::Merge(params) => commands::merge::run(params),
         Opts::Push(params) => commands::push::run(params),
-        Opts::Squash(params) => commands::squash::run(params),
         Opts::Update(params) => commands::update::run(params),
     };
 

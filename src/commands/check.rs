@@ -4,13 +4,10 @@ use crate::Check;
 pub fn run(params: Check) -> Result<(), Box<dyn std::error::Error>> {
     let mut git = Git::open()?;
 
-    let (_forked_at, parent_branch) = git.get_parent()?;
-
     let default_branch = git.get_default_branch("origin")?;
     let parent = params
         .revision
         .as_ref()
-        .or_else(|| parent_branch.as_ref())
         .map(|x| x.as_str())
         .unwrap_or_else(|| default_branch.as_str());
 
