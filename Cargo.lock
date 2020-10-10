@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "common"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 3.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -254,7 +254,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "git-fork"
 version = "0.1.0"
 dependencies = [
- "common 0.0.0",
+ "common 0.1.0",
  "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -262,7 +262,7 @@ dependencies = [
 name = "git-push2"
 version = "0.1.0"
 dependencies = [
- "common 0.0.0",
+ "common 0.1.0",
  "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -270,7 +270,7 @@ dependencies = [
 name = "git-try-merge"
 version = "0.1.0"
 dependencies = [
- "common 0.0.0",
+ "common 0.1.0",
  "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

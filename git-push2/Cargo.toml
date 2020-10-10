@@ -16,5 +16,5 @@ is-it-maintained-issue-resolution = { repository = "cecton/gptman" }
 is-it-maintained-open-issues = { repository = "cecton/gptman" }
 
 [dependencies]
-common = { path = "../common" }
+common = { path = "../common", version = "0.1.0" }
 structopt = "0.3.17"
