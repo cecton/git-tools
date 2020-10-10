@@ -89,18 +89,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-git"
-version = "0.7.0"
-dependencies = [
- "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "dirs 3.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "git2 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "git2_credentials 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "users 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "cc"
 version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -136,6 +124,17 @@ dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.71 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "common"
+version = "0.0.0"
+dependencies = [
+ "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dirs 3.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git2 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git2_credentials 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "users 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -250,6 +249,30 @@ dependencies = [
 name = "gimli"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "git-fork"
+version = "0.1.0"
+dependencies = [
+ "common 0.0.0",
+ "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "git-push2"
+version = "0.1.0"
+dependencies = [
+ "common 0.0.0",
+ "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "git-try-merge"
+version = "0.1.0"
+dependencies = [
+ "common 0.0.0",
+ "structopt 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "git2"
