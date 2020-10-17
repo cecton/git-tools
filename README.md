@@ -2,8 +2,18 @@ Available Git subcommands
 =========================
 
  *  [`git fork`](#git-fork)
+
+    Create a new branch based on the default branch (usually `origin/main`).
+
  *  [`git push2`](#git-push2)
+
+    Push a branch and set the upstream if not already set.
+
  *  [`git try-merge`](#git-try-merge)
+
+    Does like a `git merge origin/main` but helps you resolve the conflicting
+    commits one by one instead than having to solve them altogether like
+    `git merge`.
 
 git-try-merge
 =============
