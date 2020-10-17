@@ -1,3 +1,10 @@
+Available Git subcommands
+=========================
+
+ *  [`git fork`](#git-fork)
+ *  [`git push2`](#git-push2)
+ *  [`git try-merge`](#git-try-merge)
+
 git-try-merge
 =============
 
