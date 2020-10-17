@@ -9,7 +9,7 @@ repository = "https://github.com/cecton/git-tools"
 homepage = "https://github.com/cecton/git-tools"
 readme = "README.md"
 keywords = ["git", "workflow", "merge", "rebase", "try-merge", "fork", "push2"]
-categories = ["development-tools::cargo-plugins"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "git-try-merge"
@@ -26,9 +26,10 @@ name = "git-push2"
 path = "src/git-push2.rs"
 doc = false
 
-[badges]
-is-it-maintained-issue-resolution = { repository = "cecton/gptman" }
-is-it-maintained-open-issues = { repository = "cecton/gptman" }
+[[bin]]
+name = "git-delete"
+path = "src/git-delete.rs"
+doc = false
 
 [dependencies]
 git2 = "0.11.0"
