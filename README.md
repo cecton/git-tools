@@ -1,5 +1,4 @@
-Available Git subcommands
-=========================
+### Available Git subcommands
 
  *  [`git fork`](#git-fork)
 
