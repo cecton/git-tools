@@ -1,4 +1,4 @@
-### Available Git subcommands
+##### Table of Contents
 
  *  [`git fork`](#git-fork)
 
