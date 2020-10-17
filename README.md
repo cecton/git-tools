@@ -155,3 +155,10 @@ This is the equivalent of:
 git branch -d new-branch
 git push origin :new-branch
 ```
+
+Installation
+------------
+
+```bash
+cargo install git-tools --bin git-delete
+```
