@@ -1,3 +1,8 @@
+![Rust](https://github.com/cecton/git-tools/workflows/Rust/badge.svg)
+[![Latest Version](https://img.shields.io/crates/v/git-tools.svg)](https://crates.io/crates/git-tools)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
+[![Docs.rs](https://docs.rs/git-tools/badge.svg)](https://docs.rs/git-tools)
+
 ##### Table of Contents
 
  *  [`git fork`](#git-fork)
