@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
@@ -6,7 +8,6 @@ use git2::{
     PushOptions, RemoteCallbacks, Sort, StatusOptions,
 };
 pub use git2::{Oid, Repository};
-use regex::Regex;
 
 pub struct Git {
     pub repo: Repository,
@@ -59,48 +60,6 @@ impl Git {
             branch_name,
             upstream,
         })
-    }
-
-    pub fn get_parent(&self) -> Result<(Option<String>, Option<String>), Error> {
-        let re_forked_at = Regex::new(r"(?m)^\s*Forked at:\s*(\S+)").unwrap();
-        let re_parent_branch = Regex::new(r"(?m)^\s*Parent branch:\s*(\S+)").unwrap();
-
-        let mut revwalk = self.repo.revwalk()?;
-        revwalk.set_sorting(Sort::TOPOLOGICAL);
-        revwalk.push_head()?;
-
-        let mut forked_at = None;
-        let mut parent_branch = None;
-        let mut count = 0;
-        for oid in revwalk {
-            let oid = oid?;
-            let commit = self.repo.find_commit(oid)?;
-            let message = commit.message().unwrap();
-
-            if forked_at.is_none() {
-                forked_at = re_forked_at
-                    .captures(message)
-                    .as_ref()
-                    .map(|captures| captures[1].to_string());
-            }
-            if parent_branch.is_none() {
-                parent_branch = re_parent_branch
-                    .captures(message)
-                    .as_ref()
-                    .map(|captures| captures[1].to_string());
-            }
-
-            if forked_at.is_some() && parent_branch.is_some() {
-                break;
-            }
-
-            count += 1;
-            if count >= 30 {
-                break;
-            }
-        }
-
-        Ok((forked_at, parent_branch))
     }
 
     pub fn get_staged_and_unstaged_files(&self) -> Result<Vec<String>, Error> {
@@ -168,24 +127,6 @@ impl Git {
         Ok(())
     }
 
-    pub fn reset_soft(&mut self, revision: &str, message: &str) -> Result<String, Error> {
-        let object = self.repo.revparse_single(revision)?;
-        let oid = object.id();
-
-        if let (_, Some(mut reference)) = self
-            .repo
-            .revparse_ext(self.branch_name.as_ref().unwrap_or(&self.head_hash))?
-        {
-            reference.set_target(oid, message)?;
-        } else {
-            self.repo.set_head_detached(oid)?;
-        }
-
-        self.head_hash = hash_from_oid(oid);
-
-        Ok(self.head_hash.clone())
-    }
-
     pub fn commit_files(&mut self, message: &str, files: &[&str]) -> Result<Oid, Error> {
         let object = self.repo.revparse_single("HEAD")?;
         let commit = object.as_commit().unwrap();
@@ -218,26 +159,6 @@ impl Git {
         Ok(oid)
     }
 
-    pub fn commit(&mut self, message: &str) -> Result<Oid, Error> {
-        let signature = self.repo.signature()?;
-        let object = self.repo.revparse_single("HEAD")?;
-        let commit = object.as_commit().unwrap();
-        let tree = commit.tree()?;
-
-        let oid = self.repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            message,
-            &tree,
-            &[&commit],
-        )?;
-
-        self.head_hash = hash_from_oid(oid);
-
-        Ok(oid)
-    }
-
     pub fn full_delete_branch(&self, branch_name: &str) -> Result<(), Error> {
         let mut local_branch = self.repo.find_branch(branch_name, BranchType::Local)?;
 
@@ -261,21 +182,6 @@ impl Git {
         local_branch.delete()?;
 
         Ok(())
-    }
-
-    pub fn graph_ahead_behind(&self, from: &str, to: &str) -> Result<(usize, usize), Error> {
-        let from = self
-            .repo
-            .revparse_single(from)?
-            .into_commit()
-            .expect("from is not a commit");
-        let to = self
-            .repo
-            .revparse_single(to)?
-            .into_commit()
-            .expect("from is not a commit");
-
-        self.repo.graph_ahead_behind(from.id(), to.id())
     }
 
     pub fn has_file_changes(&self) -> Result<bool, Error> {
@@ -329,7 +235,7 @@ impl Git {
         let mut options = MergeOptions::new();
         options.fail_on_conflict(false);
 
-        let mut index = self.repo.merge_commits(&our, &their, Some(&mut options))?;
+        let mut index = self.repo.merge_commits(&our, &their, Some(&options))?;
         let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
         for conflict in conflicts {
             let their = conflict.their.expect("an index entry for their exist");
@@ -485,7 +391,7 @@ impl CredentialHandler {
             let home_dir = dirs::home_dir().expect("could not get home directory");
 
             Cred::ssh_key(
-                username_from_url.unwrap_or(user.to_str().unwrap()),
+                username_from_url.unwrap_or_else(|| user.to_str().unwrap()),
                 Some(&home_dir.join(".ssh/id_rsa.pub")),
                 &home_dir.join(".ssh/id_rsa"),
                 None,

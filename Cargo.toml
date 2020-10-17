@@ -1,25 +1,40 @@
 [package]
-name = "cargo-git"
-version = "0.7.0"
+name = "git-tools"
+version = "0.1.0"
 authors = ["Cecile Tonglet <cecile.tonglet@cecton.com>"]
 edition = "2018"
 license = "MIT"
-description = "An opinionated helper command to use git with cargo. This does not replace the git command but should be used in conjunction with."
-repository = "https://github.com/cecton/cargo-git"
-homepage = "https://github.com/cecton/cargo-git"
+description = "Git subcommands to help with your workflow."
+repository = "https://github.com/cecton/git-tools"
+homepage = "https://github.com/cecton/git-tools"
 readme = "README.md"
-keywords = ["git", "cargo", "opinionated", "workflow"]
-categories = ["development-tools::cargo-plugins"]
+keywords = ["git", "workflow", "merge", "rebase", "try-merge", "fork", "push2"]
+categories = ["command-line-utilities"]
 
-[badges]
-is-it-maintained-issue-resolution = { repository = "cecton/gptman" }
-is-it-maintained-open-issues = { repository = "cecton/gptman" }
+[[bin]]
+name = "git-try-merge"
+path = "src/git-try-merge.rs"
+doc = false
+
+[[bin]]
+name = "git-fork"
+path = "src/git-fork.rs"
+doc = false
+
+[[bin]]
+name = "git-push2"
+path = "src/git-push2.rs"
+doc = false
+
+[[bin]]
+name = "git-delete"
+path = "src/git-delete.rs"
+doc = false
 
 [dependencies]
-structopt = "0.3.17"
 git2 = "0.11.0"
-regex = "1.3.9"
 dirs = "3.0.1"
 users = "0.10.0"
 git2_credentials = "0.4.0"
 bitvec = "0.17.4"
+structopt = "0.3.17"
