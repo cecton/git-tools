@@ -18,13 +18,6 @@ Available Git subcommands
 git-try-merge
 =============
 
-Does like a `git merge origin/main` but helps you resolve the conflicting
-commits one by one instead than having to solve them altogether like
-`git merge`.
-
-Synopsis
---------
-
 ```bash
 git try-merge
 # 1.  Merge as many non-conflicting commits as possible under one merge commit
@@ -58,11 +51,6 @@ cargo install git-tools --bin git-try-merge
 
 git-fork
 ========
-
-Create a new branch based on the default branch (usually `origin/main`).
-
-Synopsis
---------
 
 ```bash
 git fork new-branch
@@ -104,11 +92,6 @@ cargo install git-tools --bin git-fork
 
 git-push2
 =========
-
-Push a branch and set the upstream if not already set.
-
-Synopsis
---------
 
 ```bash
 git push2
