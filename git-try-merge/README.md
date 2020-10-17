@@ -31,3 +31,10 @@ git merge origin/main
 # Then you will solve all the conflicts of all the commits in one commit,
 # no matter how many commits are conflicting.
 ```
+
+Installation
+------------
+
+```bash
+cargo install git-try-merge
+```

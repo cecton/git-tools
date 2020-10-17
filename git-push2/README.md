@@ -17,3 +17,10 @@ git push
 # if it fails:
 git push --set-upstream origin new-branch
 ```
+
+Installation
+------------
+
+```bash
+cargo install git-push2
+```

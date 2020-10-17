@@ -36,3 +36,10 @@ git fetch origin main
 git branch -f new-branch origin/main
 git checkout new-branch
 ```
+
+Installation
+------------
+
+```bash
+cargo install git-fork
+```
