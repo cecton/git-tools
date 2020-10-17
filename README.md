@@ -5,6 +5,10 @@
 
 ##### Table of Contents
 
+ *  [`git delete`](#git-delete)
+
+    Delete a local branch and its upstream branch altogether.
+
  *  [`git fork`](#git-fork)
 
     Create a new branch based on the default branch (usually `origin/main`).
@@ -136,7 +140,7 @@ cargo install git-tools --bin git-push2
 git-delete
 ==========
 
-Delete a local branch its upstream branch altogether.
+Delete a local branch and its upstream branch altogether.
 
 Synopsis
 --------
