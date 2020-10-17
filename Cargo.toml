@@ -4,11 +4,11 @@ version = "0.1.0"
 authors = ["Cecile Tonglet <cecile.tonglet@cecton.com>"]
 edition = "2018"
 license = "MIT"
-description = "An opinionated helper command to use git with cargo. This does not replace the git command but should be used in conjunction with."
+description = "Git subcommands to help with your workflow."
 repository = "https://github.com/cecton/git-tools"
 homepage = "https://github.com/cecton/git-tools"
 readme = "README.md"
-keywords = ["git", "workflow", "merge", "rebase"]
+keywords = ["git", "workflow", "merge", "rebase", "try-merge", "fork", "push2"]
 categories = ["development-tools::cargo-plugins"]
 
 [[bin]]
