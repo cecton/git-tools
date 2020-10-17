@@ -2,6 +2,7 @@ mod common;
 
 use common::Git;
 
+use regex::Regex;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
@@ -14,9 +15,9 @@ use structopt::{clap::AppSettings, StructOpt};
     settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen],
 )]
 pub struct TryMerge {
-    /// Runs cargo update and commit only Cargo.lock alone.
+    /// Squash all the merge commits together at the end.
     #[structopt(long)]
-    deps: bool,
+    squash: bool,
 
     // NOTE: the long and short name for the parameters must not conflict with `git merge`
     /// Do not run `git merge` at the end. (Merge to the latest commit possible without conflict.)
@@ -53,38 +54,30 @@ fn execute() -> i32 {
 pub fn run(params: TryMerge) -> Result<(), Box<dyn std::error::Error>> {
     let git = Git::open()?;
 
-    if params.deps {
-        update_dependencies(git)?
-    } else {
-        update_branch(git, params)?
-    }
-
-    Ok(())
-}
-
-fn update_dependencies(mut git: Git) -> Result<(), Box<dyn std::error::Error>> {
-    let cargo_update = Command::new("cargo").arg("update").status()?;
-
-    if !cargo_update.success() {
-        return Err("Command `cargo update` failed!".into());
-    }
-
-    git.commit_files("Update Cargo.lock", &["Cargo.lock"])?;
-
-    Ok(())
+    update_branch(git, params)
 }
 
 fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::error::Error>> {
     let default_branch = git.get_default_branch("origin")?;
-    let top_commit = params.revision.clone().unwrap_or_else(|| default_branch);
+    let top_rev = params.revision.clone().unwrap_or_else(|| default_branch);
+
+    if top_rev.contains('/') {
+        git.update_upstream(top_rev.as_str())?;
+    }
 
     if git.has_file_changes()? {
         return Err("The repository has not committed changes, aborting.".into());
     }
 
-    let mut rev_list = git.rev_list("HEAD", top_commit.as_str(), true)?;
+    let mut rev_list = git.rev_list("HEAD", top_rev.as_str(), true)?;
 
     if rev_list.is_empty() {
+        if params.squash {
+            if squash_all_merge_commits(&mut git, &top_rev)?.is_some() {
+                println!("Your merge commits have been squashed.");
+                return Ok(());
+            }
+        }
         println!("Your branch is already up-to-date.");
         return Ok(());
     }
@@ -117,7 +110,7 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
     } else if let Some(revision) = last_failing_revision {
         println!(
             "Your current branch is still behind '{}' by {} commit(s).",
-            top_commit, skipped
+            top_rev, skipped
         );
         println!("First merge conflict detected on: {}", revision);
 
@@ -139,4 +132,31 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
     }
 
     Ok(())
+}
+
+fn squash_all_merge_commits(
+    git: &mut Git,
+    top_rev: &str,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let re = Regex::new(r"^Merge commit").unwrap();
+    let merge_commits = git.ancestors("HEAD")?.take_while(|commit| {
+        commit
+            .message()
+            .map(|msg| re.is_match(msg))
+            .unwrap_or_default()
+    });
+    if let Some(ancestor) = merge_commits
+        // NOTE: we need to have more than 1 commit to make a squash
+        .skip(1)
+        .last()
+        .map(|x| format!("{}", x.parent(0).unwrap().id()))
+    {
+        Ok(Some(git.squash(
+            &ancestor,
+            top_rev,
+            &format!("Merge branch {}", top_rev),
+        )?))
+    } else {
+        Ok(None)
+    }
 }

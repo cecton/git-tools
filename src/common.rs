@@ -4,7 +4,7 @@ use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Branch, BranchType, Cred, CredentialType, Error, ErrorCode, FetchOptions, MergeOptions,
+    Branch, BranchType, Commit, Cred, CredentialType, Error, ErrorCode, FetchOptions, MergeOptions,
     PushOptions, RemoteCallbacks, Sort, StatusOptions,
 };
 pub use git2::{Oid, Repository};
@@ -33,7 +33,7 @@ impl Git {
             let (object, maybe_ref) = repo.revparse_ext("HEAD")?;
             let commit = object.as_commit().unwrap();
             head_message = commit.message().unwrap().to_string();
-            head_hash = hash_from_oid(object.id());
+            head_hash = format!("{}", object.id());
             branch_name = maybe_ref.and_then(|x| {
                 x.shorthand()
                     .filter(|&x| x != "HEAD")
@@ -85,7 +85,7 @@ impl Git {
 
     pub fn get_branch_hash(&self, branch_name: &str) -> Result<Option<String>, Error> {
         if let (_, Some(reference)) = self.repo.revparse_ext(branch_name)? {
-            Ok(Some(hash_from_oid(reference.target().unwrap())))
+            Ok(Some(format!("{}", reference.target().unwrap())))
         } else {
             Ok(None)
         }
@@ -119,7 +119,7 @@ impl Git {
         self.repo.set_head(branch.get().name().unwrap())?;
 
         self.branch_name = Some(branch_name.to_string());
-        self.head_hash = hash_from_oid(object.id());
+        self.head_hash = format!("{}", object.id());
         if let Ok(upstream) = branch.upstream() {
             self.upstream = upstream.name()?.map(|x| x.to_string());
         }
@@ -154,7 +154,7 @@ impl Git {
         index.update_all(files, None)?;
         self.repo.checkout_index(Some(&mut index), None)?;
 
-        self.head_hash = hash_from_oid(oid);
+        self.head_hash = format!("{}", oid);
 
         Ok(oid)
     }
@@ -277,7 +277,7 @@ impl Git {
         checkout_builder.force();
         self.repo.checkout_head(Some(&mut checkout_builder))?;
 
-        self.head_hash = hash_from_oid(oid);
+        self.head_hash = format!("{}", oid);
 
         Ok(Some((self.head_hash.clone(), cargo_lock_conflict)))
     }
@@ -296,7 +296,7 @@ impl Git {
         revwalk.push(to_object.id())?;
 
         revwalk
-            .map(|x| x.map(hash_from_oid))
+            .map(|x| x.map(|x| format!("{}", x)))
             .collect::<Result<Vec<_>, Error>>()
     }
 
@@ -323,17 +323,43 @@ impl Git {
 
         Ok(())
     }
-}
 
-pub fn hash_from_oid(oid: Oid) -> String {
-    let slice = oid.as_bytes();
-    let mut out = String::with_capacity(slice.len() * 2);
+    pub fn ancestors(&self, rev: &str) -> Result<Ancestors, Error> {
+        let object = self.repo.revparse_single(rev)?;
+        let commit = object.peel_to_commit()?;
 
-    for x in slice {
-        out.push_str(format!("{:02x}", x).as_str());
+        Ok(Ancestors {
+            current: Some(commit),
+        })
     }
 
-    out
+    pub fn squash(
+        &mut self,
+        parent_0: &str,
+        parent_1: &str,
+        message: &str,
+    ) -> Result<String, Error> {
+        let parent_0 = self.repo.revparse_single(parent_0)?.peel_to_commit()?;
+        let parent_1 = self.repo.revparse_single(parent_1)?.peel_to_commit()?;
+        let head = self.repo.revparse_single("HEAD")?.peel_to_commit()?;
+        let tree = self.repo.find_tree(head.tree_id())?;
+
+        self.repo.set_head_detached(parent_0.id())?;
+
+        let signature = self.repo.signature()?;
+        let oid = self.repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            message,
+            &tree,
+            &[&parent_0, &parent_1],
+        )?;
+
+        self.head_hash = format!("{}", oid);
+
+        Ok(self.head_hash.clone())
+    }
 }
 
 fn find_git_repository() -> Result<Option<PathBuf>, Error> {
@@ -400,5 +426,20 @@ impl CredentialHandler {
             self.second_handler
                 .try_next_credential(url, username_from_url, allowed_types)
         }
+    }
+}
+
+pub struct Ancestors<'a> {
+    current: Option<Commit<'a>>,
+}
+
+impl<'a> Iterator for Ancestors<'a> {
+    type Item = Commit<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current.take().map(|this| {
+            self.current = this.parent(0).ok();
+            this
+        })
     }
 }
