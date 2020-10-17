@@ -235,7 +235,7 @@ impl Git {
         let mut options = MergeOptions::new();
         options.fail_on_conflict(false);
 
-        let mut index = self.repo.merge_commits(&our, &their, Some(&mut options))?;
+        let mut index = self.repo.merge_commits(&our, &their, Some(&options))?;
         let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
         for conflict in conflicts {
             let their = conflict.their.expect("an index entry for their exist");
