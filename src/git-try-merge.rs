@@ -1,3 +1,5 @@
+mod common;
+
 use common::Git;
 
 use std::io::Write;
@@ -7,7 +9,7 @@ use structopt::{clap::AppSettings, StructOpt};
 
 #[derive(StructOpt, Debug)]
 #[structopt(
-    bin_name = "cargo git",
+    bin_name = "git try-merge",
     about = env!("CARGO_PKG_DESCRIPTION"),
     settings = &[AppSettings::TrailingVarArg, AppSettings::AllowLeadingHyphen],
 )]

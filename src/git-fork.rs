@@ -1,3 +1,5 @@
+mod common;
+
 use common::Git;
 
 use std::env;

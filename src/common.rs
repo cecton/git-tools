@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
