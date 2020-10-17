@@ -391,7 +391,7 @@ impl CredentialHandler {
             let home_dir = dirs::home_dir().expect("could not get home directory");
 
             Cred::ssh_key(
-                username_from_url.unwrap_or(user.to_str().unwrap()),
+                username_from_url.unwrap_or_else(|| user.to_str().unwrap()),
                 Some(&home_dir.join(".ssh/id_rsa.pub")),
                 &home_dir.join(".ssh/id_rsa"),
                 None,
