@@ -2,7 +2,6 @@ mod common;
 
 use common::Git;
 
-use regex::Regex;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
@@ -73,7 +72,8 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
 
     if rev_list.is_empty() {
         if params.squash {
-            if squash_all_merge_commits(&mut git, &top_rev)?.is_some() {
+            let commit = squash_all_merge_commits(&mut git, &top_rev)?;
+            if commit.is_some() {
                 println!("Your merge commits have been squashed.");
                 return Ok(());
             }
@@ -138,11 +138,10 @@ fn squash_all_merge_commits(
     git: &mut Git,
     top_rev: &str,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let re = Regex::new(r"^Merge commit").unwrap();
     let merge_commits = git.ancestors("HEAD")?.take_while(|commit| {
         commit
             .message()
-            .map(|msg| re.is_match(msg))
+            .map(|msg| msg.starts_with("Merge commit"))
             .unwrap_or_default()
     });
     if let Some(ancestor) = merge_commits
