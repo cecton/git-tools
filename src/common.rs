@@ -4,8 +4,8 @@ use std::env::{current_dir, set_current_dir};
 use std::path::{Path, PathBuf};
 
 use git2::{
-    Branch, BranchType, Commit, Cred, CredentialType, Error, ErrorCode, FetchOptions, MergeOptions,
-    PushOptions, RemoteCallbacks, Sort, StatusOptions,
+    Branch, BranchType, Commit, Config, Cred, CredentialType, Error, ErrorCode, FetchOptions,
+    MergeOptions, PushOptions, RemoteCallbacks, Sort, StatusOptions,
 };
 pub use git2::{Oid, Repository};
 
@@ -15,6 +15,7 @@ pub struct Git {
     pub head_hash: String,
     pub branch_name: Option<String>,
     pub upstream: Option<String>,
+    pub config: Config,
 }
 
 impl Git {
@@ -53,12 +54,15 @@ impl Git {
             };
         }
 
+        let config = repo.config()?.snapshot()?;
+
         Ok(Git {
             repo,
             head_message,
             head_hash,
             branch_name,
             upstream,
+            config,
         })
     }
 

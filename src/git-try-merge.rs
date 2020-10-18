@@ -15,6 +15,14 @@ use structopt::{clap::AppSettings, StructOpt};
 )]
 pub struct TryMerge {
     /// Squash all the merge commits together at the end.
+    ///
+    /// You can make this behavior the default using the following command:
+    ///
+    /// git config --global try-merge.squash true
+    ///
+    /// Or for this repository only:
+    ///
+    /// git config try-merge.squash true
     #[structopt(long)]
     squash: bool,
 
@@ -71,7 +79,8 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
     let mut rev_list = git.rev_list("HEAD", top_rev.as_str(), true)?;
 
     if rev_list.is_empty() {
-        if params.squash {
+        let default_squash = git.config.get_bool("try-merge.squash").ok();
+        if params.squash || default_squash.unwrap_or_default() {
             let commit = squash_all_merge_commits(&mut git, &top_rev)?;
             if commit.is_some() {
                 println!("Your merge commits have been squashed.");
