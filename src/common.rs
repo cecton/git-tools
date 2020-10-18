@@ -348,8 +348,17 @@ impl Git {
         let head = self.repo.revparse_single("HEAD")?.peel_to_commit()?;
         let tree = self.repo.find_tree(head.tree_id())?;
 
-        self.repo.set_head_detached(parent_0.id())?;
+        // git reset --soft to the parent "0" commit
+        if let (_, Some(mut reference)) = self
+            .repo
+            .revparse_ext(self.branch_name.as_ref().unwrap_or(&self.head_hash))?
+        {
+            reference.set_target(parent_0.id(), message)?;
+        } else {
+            self.repo.set_head_detached(parent_0.id())?;
+        }
 
+        // Make a commit with the current tree
         let signature = self.repo.signature()?;
         let oid = self.repo.commit(
             Some("HEAD"),
