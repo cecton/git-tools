@@ -96,16 +96,14 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
     while let Some(revision) = rev_list.pop() {
         let message = format!("Merge commit {} (no conflict)\n\n", revision,);
 
-        if let Some((_, cargo_lock_conflict)) =
-            git.merge_no_conflict(revision.as_str(), message.as_str())?
+        if git
+            .merge_no_conflict(revision.as_str(), message.as_str())?
+            .is_some()
         {
             println!(
                 "All the commits to {} have been merged successfully without conflict",
                 revision
             );
-            if cargo_lock_conflict {
-                println!("WARNING: conflict with Cargo.lock detected. Run `cargo git update --deps` to fix it.");
-            }
 
             break;
         } else {

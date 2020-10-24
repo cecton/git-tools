@@ -229,8 +229,7 @@ impl Git {
         &mut self,
         branch_name: &str,
         message: &str,
-    ) -> Result<Option<(String, bool)>, Error> {
-        let mut cargo_lock_conflict = false;
+    ) -> Result<Option<String>, Error> {
         let our_object = self.repo.revparse_single("HEAD")?;
         let our = our_object.as_commit().expect("our is a commit");
         let their_object = self.repo.revparse_single(branch_name)?;
@@ -241,27 +240,8 @@ impl Git {
 
         let mut index = self.repo.merge_commits(&our, &their, Some(&options))?;
         let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
-        for conflict in conflicts {
-            let their = conflict.their.expect("an index entry for their exist");
-            let path = std::str::from_utf8(their.path.as_slice()).expect("valid UTF-8");
-
-            if path == "Cargo.lock" {
-                use bitvec::prelude::*;
-
-                let mut flags = BitVec::<Msb0, _>::from_element(their.flags);
-                // NOTE: Reset stage flags
-                // https://github.com/git/git/blob/master/Documentation/technical/index-format.txt
-                flags[2..=3].set_all(false);
-                let their = git2::IndexEntry {
-                    flags: flags.as_slice()[0],
-                    ..their
-                };
-                index.remove_path(Path::new("Cargo.lock")).unwrap();
-                index.add(&their)?;
-                cargo_lock_conflict = true;
-            } else {
-                return Ok(None);
-            }
+        if !conflicts.is_empty() {
+            return Ok(None);
         }
 
         let oid = index.write_tree_to(&self.repo)?;
@@ -283,7 +263,7 @@ impl Git {
 
         self.head_hash = format!("{}", oid);
 
-        Ok(Some((self.head_hash.clone(), cargo_lock_conflict)))
+        Ok(Some(self.head_hash.clone()))
     }
 
     pub fn rev_list(&self, from: &str, to: &str, reversed: bool) -> Result<Vec<String>, Error> {
