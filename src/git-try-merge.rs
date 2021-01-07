@@ -2,6 +2,8 @@ mod common;
 
 use common::Git;
 
+use globset::{Glob, GlobSetBuilder};
+use std::collections::HashSet;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
@@ -91,24 +93,44 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
         return Ok(());
     }
 
+    let mut builder = GlobSetBuilder::new();
+    for entry in git
+        .config
+        .multivar("try-merge.ignore-conflict", None)
+        .iter()
+        .flatten()
+        .filter_map(|x| x.ok())
+    {
+        builder.add(Glob::new(entry.value().expect("invalid UTF-8"))?);
+    }
+    let ignore_conflict_set = builder.build()?;
+
     let mut skipped = 0;
     let mut last_failing_revision: Option<String> = None;
+    let mut all_ignored_conflicts = HashSet::new();
     while let Some(revision) = rev_list.pop() {
         let message = format!("Merge commit {} (no conflict)\n\n", revision,);
 
-        if git
-            .merge_no_conflict(revision.as_str(), message.as_str())?
-            .is_some()
+        if let Some((_, ignored_conflicts)) =
+            git.merge_no_conflict(revision.as_str(), message.as_str(), &ignore_conflict_set)?
         {
             println!(
                 "All the commits to {} have been merged successfully without conflict",
                 revision
             );
+            all_ignored_conflicts.extend(ignored_conflicts);
 
             break;
         } else {
             skipped += 1;
             last_failing_revision = Some(revision.clone());
+        }
+    }
+
+    if !all_ignored_conflicts.is_empty() {
+        println!("The following files had conflicts but have been ignored:");
+        for file_path in all_ignored_conflicts {
+            println!("{}", file_path);
         }
     }
 
