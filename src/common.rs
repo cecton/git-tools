@@ -244,7 +244,11 @@ impl Git {
         let conflicts = index.conflicts()?.collect::<Result<Vec<_>, _>>()?;
         let mut ignored_conflicts = Vec::new();
         for conflict in conflicts {
-            let their = conflict.their.expect("an index entry for their exist");
+            let their = match conflict.their {
+                Some(x) => x,
+                None => return Ok(None),
+            };
+
             let path = std::str::from_utf8(their.path.as_slice()).expect("valid UTF-8");
 
             if ignore_conflict_globs.matches(path).is_empty() {
