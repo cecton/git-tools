@@ -164,31 +164,6 @@ impl Git {
         Ok(oid)
     }
 
-    pub fn full_delete_branch(&self, branch_name: &str) -> Result<(), Error> {
-        let mut local_branch = self.repo.find_branch(branch_name, BranchType::Local)?;
-
-        if let Ok(remote_branch) = local_branch.upstream() {
-            let (maybe_remote, name) = get_remote_and_branch(&remote_branch);
-            let remote = maybe_remote.expect("remote branch");
-
-            let mut remote_callbacks = RemoteCallbacks::new();
-            let mut handler = CredentialHandler::new();
-            remote_callbacks.credentials(move |x, y, z| handler.credentials_callback(x, y, z));
-
-            let mut push_options = PushOptions::new();
-            push_options.remote_callbacks(remote_callbacks);
-
-            self.repo.find_remote(remote)?.push(
-                &[&format!("+:refs/heads/{}", name)],
-                Some(&mut push_options),
-            )?;
-        }
-
-        local_branch.delete()?;
-
-        Ok(())
-    }
-
     pub fn has_file_changes(&self) -> Result<bool, Error> {
         let tree = self.repo.head()?.peel_to_tree()?;
 
@@ -409,13 +384,13 @@ fn get_remote_and_branch<'a>(branch: &'a Branch) -> (Option<&'a str>, &'a str) {
     (maybe_remote_name, branch_name)
 }
 
-struct CredentialHandler {
+pub struct CredentialHandler {
     second_handler: git2_credentials::CredentialHandler,
     first_attempt_failed: bool,
 }
 
 impl CredentialHandler {
-    fn new() -> CredentialHandler {
+    pub fn new() -> CredentialHandler {
         let git_config = git2::Config::open_default().unwrap();
         let second_handler = git2_credentials::CredentialHandler::new(git_config);
 
@@ -425,7 +400,7 @@ impl CredentialHandler {
         }
     }
 
-    fn credentials_callback(
+    pub fn credentials_callback(
         &mut self,
         url: &str,
         username_from_url: Option<&str>,

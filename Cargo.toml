@@ -32,6 +32,7 @@ path = "src/git-delete.rs"
 doc = false
 
 [dependencies]
+anyhow = "1"
 git2 = "0.13.0"
 dirs = "3.0.1"
 users = "0.10.0"
