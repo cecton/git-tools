@@ -231,7 +231,8 @@ impl Git {
             } else {
                 use bitvec::prelude::*;
 
-                ignored_conflicts.push(path.to_owned());
+                let path = path.to_owned();
+                ignored_conflicts.push(path.clone());
 
                 let mut flags = BitVec::<Msb0, _>::from_element(their.flags);
                 // NOTE: Reset stage flags
@@ -241,7 +242,7 @@ impl Git {
                     flags: flags.as_slice()[0],
                     ..their
                 };
-                index.remove_path(Path::new("Cargo.lock")).unwrap();
+                index.remove_path(Path::new(&path)).unwrap();
                 index.add(&their)?;
             }
         }
