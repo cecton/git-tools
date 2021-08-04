@@ -1,6 +1,6 @@
 [package]
 name = "git-tools"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Cecile Tonglet <cecile.tonglet@cecton.com>"]
 edition = "2018"
 license = "MIT"
