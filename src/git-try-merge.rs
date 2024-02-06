@@ -93,17 +93,14 @@ fn update_branch(mut git: Git, params: TryMerge) -> Result<(), Box<dyn std::erro
         return Ok(());
     }
 
-    let mut builder = GlobSetBuilder::new();
-    for entry in git
-        .config
-        .multivar("try-merge.ignore-conflict", None)
-        .iter()
-        .flatten()
-        .filter_map(|x| x.ok())
-    {
-        builder.add(Glob::new(entry.value().expect("invalid UTF-8"))?);
-    }
-    let ignore_conflict_set = builder.build()?;
+    let ignore_conflict_set = {
+        let mut builder = GlobSetBuilder::new();
+        let mut entries = git.config.multivar("try-merge.ignore-conflict", None)?;
+        while let Some(entry) = entries.next().transpose()? {
+            builder.add(Glob::new(entry.value().expect("invalid UTF-8"))?);
+        }
+        builder.build()?
+    };
 
     let mut skipped = 0;
     let mut last_failing_revision: Option<String> = None;
