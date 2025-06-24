@@ -40,3 +40,6 @@ git2_credentials = "0.13.0"
 bitvec = "0.17.4"
 structopt = "0.3.17"
 globset = "0.4.6"
+
+[features]
+vendored-openssl = ["git2/vendored-openssl"]
